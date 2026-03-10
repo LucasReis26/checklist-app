@@ -18,12 +18,6 @@ O sistema deve permitir o cadastro e gerenciamento de **Tarefas**, **Categorias*
 - Garantir persistência em arquivos binários com controle de exclusão lógica.
 - Fornecer documentação contendo Diagrama de Caso de Uso (DCU), Diagrama Entidade-Relacionamento (DER) e Arquitetura Proposta.
 
-    **DCU**
-    ![diagrama de caso de uso](/doc/imagens/DCU.drawio.png)
-
-    **DER**
-    ![diagrama de entidade e relacionamento](/doc/imagens/DER.drawio.png)
-
 ## 3. Requisitos Funcionais
 
 - **RF01 - Cadastro de Categorias:** O sistema deve permitir criar, listar, atualizar e excluir categorias (Ex: "Faculdade", "Trabalho").
@@ -50,11 +44,11 @@ O sistema deve permitir o cadastro e gerenciamento de **Tarefas**, **Categorias*
 
 ## 6. Diagrama de Caso de Uso
 
-![Diagrama de Caso de Uso](./images/diagrama-de-casos-de-uso.png)
+![DCU](/doc/imagens/DCU.drawio.png)
 
 ## 7. Diagrama Entidade-Relacionamento
 
-
+![DER](/doc/imagens/DER.drawio.png)
 
 ## 8. Arquitetura Proposta
 
