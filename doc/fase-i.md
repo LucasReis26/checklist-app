@@ -56,7 +56,20 @@ O sistema seguirá o padrão **MVC + DAO**, onde:
 
 - **Model:** Classes de domínio (Usuário, Tarefa, Categoria, Tags)
 - **DAO:** Acesso a arquivos binários e lápide.
-- **Controller:** Regras de negócio.
+- **Controller:**
+    **Operações do Usuário**
+    - Criar Tarefa 
+    - Excluir Tarefa
+    - Atualizar Tarefa
+    - Ler Tarefa
+    - Criar Categoria
+    - Excluir Categoria
+    - Atualizar Categoria
+    - Ler Categoria
+    - Criar Tag
+    - Excluir Tag
+    - Atualizar Tag
+    - Atribuir Tarefa a uma Categoria
+    - Atribuir uma Tag a uma Tarefa
 - **View:** Interface mínima HTML/CSS
 
-**Diagrama de Arquitetura em Camadas**
