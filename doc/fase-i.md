@@ -44,11 +44,11 @@ O sistema deve permitir o cadastro e gerenciamento de **Tarefas**, **Categorias*
 
 ## 6. Diagrama de Caso de Uso
 
-![DCU](/doc/imagens/DCU.drawio.png)
+![DCU](./images/DCU.drawio.png)
 
 ## 7. Diagrama Entidade-Relacionamento
 
-![DER](/doc/imagens/DER.drawio.png)
+![DER](./images/DER.drawio.png)
 
 ## 8. Arquitetura Proposta
 
