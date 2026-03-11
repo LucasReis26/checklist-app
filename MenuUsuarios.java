@@ -53,9 +53,7 @@ public class MenuUsuarios {
     System.out.print("\nID do usuário: ");
     int id = console.nextInt();
     console.nextLine();
-    System.out.println("ID informado: " + id);
     try {
-      System.out.println("Chamando o DAO...");
       Usuario usuario = usuarioDAO.buscarUsuario(id);
       if (usuario != null) {
         System.out.println(usuario);

@@ -50,20 +50,15 @@ public class Arquivo<T extends Registro> {
   }
 
   public T read(int id) throws Exception {
-    System.out.println("teste");
     arquivo.seek(TAM_CABECALHO);
     while (arquivo.getFilePointer() < arquivo.length()) {
-      System.out.println("Procurando ID");
       long posicao = arquivo.getFilePointer();
       byte lapide = arquivo.readByte();
-      System.out.println("Lapide: " + lapide);
       short tamanho = arquivo.readShort();
-      System.out.println("Tamanho: " + tamanho);
       byte[] dados = new byte[tamanho];
       arquivo.read(dados);
 
       if (lapide == ' ') {
-        System.out.println("Existe!");
         T obj = construtor.newInstance();
         obj.fromByteArray(dados);
         if (obj.getId() == id) {
