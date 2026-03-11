@@ -3,11 +3,13 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 
 public class Arquivo<T extends Registro> {
+  // Explicado em docs/aux/arquivo/arquivo.md
   private static final int TAM_CABECALHO = 12;
   private RandomAccessFile arquivo;
   private String nomeArquivo;
   private Constructor<T> construtor;
 
+  // Explicado em docs/aux/arquivo/construtor.md
   public Arquivo(String nomeArquivo, Constructor<T> construtor) throws Exception {
     File diretorio = new File("./dados");
     if (!diretorio.exists()) diretorio.mkdir();
@@ -25,6 +27,7 @@ public class Arquivo<T extends Registro> {
     }
   }
 
+  // Explicado em docs/aux/arquivo/create.md
   public int create(T obj) throws Exception {
     arquivo.seek(0);
     int novoID = arquivo.readInt() + 1;
@@ -49,6 +52,7 @@ public class Arquivo<T extends Registro> {
     return obj.getId();
   }
 
+  // Explicado em docs/aux/arquivo/read.md
   public T read(int id) throws Exception {
     arquivo.seek(TAM_CABECALHO);
     while (arquivo.getFilePointer() < arquivo.length()) {
@@ -69,6 +73,7 @@ public class Arquivo<T extends Registro> {
     return null;
   }
 
+  // Explicado em docs/aux/arquivo/delete.md
   public boolean delete(int id) throws Exception {
     arquivo.seek(TAM_CABECALHO);
     while (arquivo.getFilePointer() < arquivo.length()) {
@@ -92,6 +97,7 @@ public class Arquivo<T extends Registro> {
     return false;
   }
 
+  // Explicado em docs/aux/arquivo/update.md
   public boolean update(T novoObj) throws Exception {
     arquivo.seek(TAM_CABECALHO);
     while (arquivo.getFilePointer() < arquivo.length()) {
@@ -137,6 +143,7 @@ public class Arquivo<T extends Registro> {
     return false;
   }
 
+  // Explicado em docs/aux/arquivo/addDeleted.md
   private void addDeleted(int tamanhoEspaco, long enderecoEspaco) throws Exception {
     long posicao = 4;
     arquivo.seek(posicao);
@@ -177,6 +184,7 @@ public class Arquivo<T extends Registro> {
     }
   }
 
+  // Explicado em docs/aux/arquivo/getDeleted.md
   private long getDeleted(int tamanhoNecessario) throws Exception {
     long posicao = 4;
     arquivo.seek(posicao);
