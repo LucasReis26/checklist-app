@@ -42,11 +42,11 @@ Temos sempre que lembrar que esse arquivo ele pode já existir anteriormente, e 
 
 ```java 
 if (endereco == -1) {
-      arquivo.seek(arquivo.length());
-      endereco = arquivo.getFilePointer();
-      arquivo.writeByte(' '); // Lápide
-      arquivo.writeShort(dados.length);
-      arquivo.write(dados);
+    arquivo.seek(arquivo.length());
+    endereco = arquivo.getFilePointer();
+    arquivo.writeByte(' '); // Lápide
+    arquivo.writeShort(dados.length);
+    arquivo.write(dados);
 } else {
 ```
 
@@ -59,3 +59,16 @@ Aqui escreveremos primeiramente um byte que representará a nossa lápide.
 Após a lápide nós escrevemos a quantidade de bytes que o nosso registro irá ocupar, isso é importante tanto para lermos a quantidade de bytes correta de um registro sem contaminação, imagine vc ler os dados de um registro + a lápide e tamanho de registro de outro registro nosso programa quebraria, quanto pra pular um registro que a gente saiba que não é do nosso interesse.
 
 Agora SIM já que escrevemos a lápide pra informar que o nosso registro existe de fato e escrevemos o tamanho do registro nós escrevemos os dados desse registro.
+
+### Caso **ENCONTRE** um Registro
+
+```java 
+} else {
+      arquivo.seek(endereco);
+      arquivo.writeByte(' '); // Remove a lápide
+      arquivo.skipBytes(2);
+      arquivo.write(dados);
+}
+```
+
+No caso de encontrar um registro excluído com tamanho suficiente para ser sobreescrito a variável endereço armazenará um endereço de memória, diferente do caso acima que ela armazena -1, então ele irá remover a lápide já que esse endereço agora irá armazenar um endereço válido, pular os 2 bytes referentes ao tamanho do registro e então irá sobreescrever os dados restantes com o novo registro.
