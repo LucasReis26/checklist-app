@@ -4,6 +4,8 @@
 
 A classe arquivo é uma classe genérica que será utilizada por todos as classes que implementarem as funções existentes na interface Registro, essas funções serão necessárias para um bom funcionamento da classe Arquivo.
 
+Essa classe terá a função de fazer as principais manipulações em memória secundária no nosso projeto. Será responsável pelos CRUDs.
+
 ## Atributos
 
 ```java 
