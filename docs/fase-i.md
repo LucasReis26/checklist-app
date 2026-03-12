@@ -10,6 +10,8 @@
 
 **Link do Projeto:** [Checklist App](https://github.com/LucasReis26/checklist-app/tree/main)
 
+**Link do vídeo desta etapa:** [Exemplo de funcionamento CRUD](https://www.youtube.com/watch?v=pTxAkDgStCI)
+
 ## 1. Descrição do Problema 
 
 O sistema deve permitir o cadastro e gerenciamento de **Tarefas**, **Categorias** e **Tags**, possibilitando a geração de Logs de Conclusão associados a tarefas finalizadas. Deve armazenar os dados em arquivo binário com cabeçalho e controle de exclusão lógica por lápide.
