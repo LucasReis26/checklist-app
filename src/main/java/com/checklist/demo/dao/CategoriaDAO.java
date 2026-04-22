@@ -15,17 +15,12 @@ public class CategoriaDAO {
     // Explicado em docs/aux/categoriaDAO/categoriaDAO.md
     private final ArquivoIndex<Categoria> arqCategorias;
     private final UsuarioDAO usuarioDAO;
+    private final CategoriaTarefasManager categoriaTarefasManager;
 
-    /**
-     * Construtor da classe CategoriaDAO.
-     * Inicializa o arquivo com índice e o DAO de usuários.
-     * 
-     * @throws Exception Se houver erro na inicialização
-     */
-    // Explicado em docs/aux/categoriaDAO/construtor.md
-    public CategoriaDAO() throws Exception {
+    public CategoriaDAO(UsuarioDAO usuarioDAO, CategoriaTarefasManager categoriaTarefasManager) throws Exception {
         arqCategorias = new ArquivoIndex<>("categorias", Categoria.class.getConstructor());
-        usuarioDAO = new UsuarioDAO();
+        this.usuarioDAO = usuarioDAO;
+        this.categoriaTarefasManager = categoriaTarefasManager;
     }
 
     /**
@@ -115,11 +110,10 @@ public class CategoriaDAO {
         }
         
         // Verificar se existem tarefas usando esta categoria
-        TarefaDAO tarefaDAO = new TarefaDAO();
-        List<Tarefa> tarefas = tarefaDAO.buscarTarefasPorCategoria(id);
-        if (!tarefas.isEmpty()) {
+        int numTarefas = categoriaTarefasManager.contarTarefasDaCategoria(id);
+        if (numTarefas > 0) {
             throw new Exception("Não é possível excluir categoria pois existem " + 
-                               tarefas.size() + " tarefas associadas!");
+                               numTarefas + " tarefas associadas!");
         }
         
         return arqCategorias.delete(id);

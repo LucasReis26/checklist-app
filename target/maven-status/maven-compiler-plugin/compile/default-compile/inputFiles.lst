@@ -1,10 +1,4 @@
 /home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/DemoApplication.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/MenuCategorias.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/MenuLogs.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/MenuTags.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/MenuTarefas.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/MenuUsuarios.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/cli/Principal.java
 /home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/config/DataConfig.java
 /home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/controller/AuthController.java
 /home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/demo/controller/CategoriaController.java

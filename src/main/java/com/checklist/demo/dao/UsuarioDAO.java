@@ -15,16 +15,17 @@ public class UsuarioDAO {
     private final UsuarioCategoriasManager usuarioCategoriasManager;
 
     /**
-     * Construtor da classe UsuarioDAO.
-     * Inicializa o arquivo com índice e os gerenciadores de relacionamento.
+     * Construtor da classe UsuarioDAO com injeção de dependências.
      * 
+     * @param usuarioTarefasManager Gerenciador de tarefas do usuário
+     * @param usuarioCategoriasManager Gerenciador de categorias do usuário
      * @throws Exception Se houver erro na inicialização
      */
-    // Explicado em docs/aux/usuarioDAO/construtor.md
-    public UsuarioDAO() throws Exception {
+    public UsuarioDAO(UsuarioTarefasManager usuarioTarefasManager, 
+                      UsuarioCategoriasManager usuarioCategoriasManager) throws Exception {
         arqUsuarios = new ArquivoIndex<>("usuarios", Usuario.class.getConstructor());
-        usuarioTarefasManager = new UsuarioTarefasManager();
-        usuarioCategoriasManager = new UsuarioCategoriasManager();
+        this.usuarioTarefasManager = usuarioTarefasManager;
+        this.usuarioCategoriasManager = usuarioCategoriasManager;
     }
 
     /**

@@ -19,6 +19,7 @@ public class IndexNode {
     private long[] enderecos;    // Endereços dos registros (para nós folha)
     private long[] filhos;       // Ponteiros para filhos (para nós internos)
     private boolean folha;       // Indica se é nó folha
+    private long posicao;        // Endereço do nó no arquivo de índice
     
     /**
      * Construtor do nó.
@@ -34,6 +35,7 @@ public class IndexNode {
         this.chaves = new int[ordem];
         this.enderecos = new long[ordem];
         this.filhos = new long[ordem + 1];
+        this.posicao = -1;
         
         for (int i = 0; i < ordem; i++) {
             chaves[i] = -1;
@@ -94,6 +96,14 @@ public class IndexNode {
     // Explicado em docs/aux/indexNode/getFilho.md
     public long getFilho(int pos) {
         return filhos[pos];
+    }
+    
+    public long getPosicao() {
+        return posicao;
+    }
+    
+    public void setPosicao(long posicao) {
+        this.posicao = posicao;
     }
     
     /**
@@ -321,6 +331,7 @@ public class IndexNode {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
+        dos.writeLong(posicao);
         dos.writeInt(ordem);
         dos.writeInt(numChaves);
         dos.writeBoolean(folha);
@@ -346,9 +357,10 @@ public class IndexNode {
         ByteArrayInputStream bais = new ByteArrayInputStream(b);
         DataInputStream dis = new DataInputStream(bais);
         
-        ordem = dis.readInt();
-        numChaves = dis.readInt();
-        folha = dis.readBoolean();
+        this.posicao = dis.readLong();
+        this.ordem = dis.readInt();
+        this.numChaves = dis.readInt();
+        this.folha = dis.readBoolean();
         
         chaves = new int[ordem];
         enderecos = new long[ordem];
@@ -370,8 +382,8 @@ public class IndexNode {
      */
     // Explicado em docs/aux/indexNode/getTamanhoMaximo.md
     public static int getTamanhoMaximo(int ordem) {
-        // ordem (4) + numChaves (4) + folha (1) + 
+        // posicao (8) + ordem (4) + numChaves (4) + folha (1) + 
         // ordem * (chave(4) + endereco(8) + filho(8)) + filho extra(8)
-        return 4 + 4 + 1 + ordem * (4 + 8 + 8) + 8;
+        return 8 + 4 + 4 + 1 + ordem * (4 + 8 + 8) + 8;
     }
 }

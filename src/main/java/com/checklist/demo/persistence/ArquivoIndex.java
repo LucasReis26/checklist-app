@@ -170,6 +170,9 @@ public class ArquivoIndex<T extends Registro> {
             return -1;
         } else {
             long filhoPos = no.getFilho(pos);
+            if (filhoPos == no.getPosicao()) {
+                throw new Exception("Ciclo detectado no índice: nó " + no.getPosicao() + " aponta para si mesmo.");
+            }
             IndexNode filho = lerNo(filhoPos);
             return buscarEmNo(filho, chave);
         }
