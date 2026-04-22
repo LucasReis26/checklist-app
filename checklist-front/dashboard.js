@@ -435,15 +435,22 @@ function submitTaskForm(e) {
   const id = document.getElementById('task-id').value;
   const titulo = document.getElementById('task-title').value.trim();
   const descricao = document.getElementById('task-desc').value.trim();
-  const id_categoria = Number(document.getElementById('task-category').value);
+  const categorySelect = document.getElementById('task-category');
+  const id_categoria = categorySelect.value === "" ? null : Number(categorySelect.value);
   const dueStr = document.getElementById('task-due').value;
   const tagIds = Array.from(document.querySelectorAll('#task-tags-picker input:checked')).map(cb => Number(cb.value));
 
   let ok = true;
   if (!titulo) { document.getElementById('task-title-error').textContent = 'Título é obrigatório'; ok = false; }
   else { document.getElementById('task-title-error').textContent = ''; }
-  if (!id_categoria) { document.getElementById('task-category-error').textContent = 'Selecione uma categoria'; ok = false; }
-  else { document.getElementById('task-category-error').textContent = ''; }
+  
+  if (categorySelect.value === "") { 
+    document.getElementById('task-category-error').textContent = 'Selecione uma categoria'; 
+    ok = false; 
+  } else { 
+    document.getElementById('task-category-error').textContent = ''; 
+  }
+  
   if (!ok) return;
 
   const data_vencimento = dueStr ? new Date(dueStr + 'T23:59:00').getTime() : null;

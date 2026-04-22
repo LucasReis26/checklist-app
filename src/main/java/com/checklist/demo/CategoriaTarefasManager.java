@@ -51,12 +51,7 @@ public class CategoriaTarefasManager {
         if (!tarefas.contains(idTarefa)) {
             tarefas.add(idTarefa);
             RegistroListaTarefas novoRegistro = new RegistroListaTarefas(idCategoria, tarefas);
-            
-            if (registro == null) {
-                arquivoRelacoes.create(novoRegistro);
-            } else {
-                arquivoRelacoes.update(novoRegistro);
-            }
+            arquivoRelacoes.save(novoRegistro);
         }
     }
     

@@ -14,6 +14,7 @@ let state = {
   categorias: [],
   tags: [],
   tarefas: [],
+  tarefa_tags: [],
   logs: []
 };
 let currentCategoryFilter = null; // id_categoria ou null
@@ -35,16 +36,18 @@ async function checkAuth() {
 
 async function loadData() {
   try {
-    const [cats, tags, tasks, logs] = await Promise.all([
+    const [cats, tags, tasks, logs, ttags] = await Promise.all([
       fetch('/api/categorias').then(r => r.json()),
       fetch('/api/tags').then(r => r.json()),
       fetch('/api/tarefas').then(r => r.json()),
-      fetch('/api/logs').then(r => r.json())
+      fetch('/api/logs').then(r => r.json()),
+      fetch('/api/tarefa-tags').then(r => r.json())
     ]);
     state.categorias = cats;
     state.tags = tags;
     state.tarefas = tasks;
     state.logs = logs;
+    state.tarefa_tags = ttags;
     render();
   } catch (e) {
     showToast('Erro ao carregar dados', 'error');
@@ -281,7 +284,9 @@ function renderTarefas() {
   // Ordena: pendentes primeiro, por vencimento
   tarefas.sort((a, b) => {
     if (a.status !== b.status) return a.status === 'pendente' ? -1 : 1;
-    return (a.data_vencimento || Infinity) - (b.data_vencimento || Infinity);
+    const valA = a.data_vencimento || '9999-99-99';
+    const valB = b.data_vencimento || '9999-99-99';
+    return valA.localeCompare(valB);
   });
 
   if (!tarefas.length) {
@@ -410,14 +415,22 @@ async function submitTaskForm(e) {
   const id = document.getElementById('task-id').value;
   const titulo = document.getElementById('task-title').value.trim();
   const descricao = document.getElementById('task-desc').value.trim();
-  const id_categoria = Number(document.getElementById('task-category').value);
+  const categorySelect = document.getElementById('task-category');
+  const id_categoria = categorySelect.value === "" ? null : Number(categorySelect.value);
   const data_vencimento = document.getElementById('task-due').value;
+  const tagIds = Array.from(document.querySelectorAll('#task-tags-picker input:checked')).map(cb => Number(cb.value));
 
   let ok = true;
   if (!titulo) { document.getElementById('task-title-error').textContent = 'Título é obrigatório'; ok = false; }
   else { document.getElementById('task-title-error').textContent = ''; }
-  if (!id_categoria) { document.getElementById('task-category-error').textContent = 'Selecione uma categoria'; ok = false; }
-  else { document.getElementById('task-category-error').textContent = ''; }
+  
+  if (categorySelect.value === "") { 
+    document.getElementById('task-category-error').textContent = 'Selecione uma categoria'; 
+    ok = false; 
+  } else { 
+    document.getElementById('task-category-error').textContent = ''; 
+  }
+  
   if (!ok) return;
 
   const payload = {
@@ -439,6 +452,19 @@ async function submitTaskForm(e) {
     });
 
     if (response.ok) {
+      const tarefaSalva = await response.json();
+      const tarefaId = id ? Number(id) : tarefaSalva.id;
+
+      // Se for edição, idealmente deveríamos limpar as tags antigas no backend primeiro
+      // mas como o backend atual é simples, vamos apenas adicionar as novas
+      for (const tid of tagIds) {
+        await fetch('/api/tarefa-tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_tag: tid, id_tarefa: tarefaId })
+        });
+      }
+
       showToast(id ? 'Tarefa atualizada' : 'Tarefa criada');
       closeModal('task-modal');
       loadData();

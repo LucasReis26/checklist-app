@@ -774,8 +774,10 @@ body {
   padding: 1rem;
   opacity: 0;
   transition: opacity 0.2s ease;
+  pointer-events: none;
 }
-.modal--open { opacity: 1; }
+.modal--open { opacity: 1; pointer-events: all; }
+.modal[hidden] { display: none; }
 .modal__backdrop {
   position: absolute;
   inset: 0;

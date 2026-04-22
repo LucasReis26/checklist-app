@@ -49,12 +49,7 @@ public class TarefaLogsManager {
         if (!logs.contains(idLog)) {
             logs.add(idLog);
             RegistroListaLogs novoRegistro = new RegistroListaLogs(idTarefa, logs);
-            
-            if (registro == null) {
-                arquivoRelacoes.create(novoRegistro);
-            } else {
-                arquivoRelacoes.update(novoRegistro);
-            }
+            arquivoRelacoes.save(novoRegistro);
         }
     }
     

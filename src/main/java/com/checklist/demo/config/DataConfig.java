@@ -31,4 +31,9 @@ public class DataConfig {
     public LogConclusaoDAO logConclusaoDAO() throws Exception {
         return new LogConclusaoDAO();
     }
+
+    @Bean
+    public TarefaTagDAO tarefaTagDAO() throws Exception {
+        return new TarefaTagDAO();
+    }
 }

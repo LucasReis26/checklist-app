@@ -317,6 +317,61 @@ public class ArquivoIndex<T extends Registro> {
         
         return novoID;
     }
+
+    /**
+     * Insere um registro com um ID específico (útil para índices onde o ID é a chave).
+     * 
+     * @param obj Objeto a ser persistido
+     * @return true se inserido com sucesso
+     * @throws Exception Se o ID já existir ou houver erro na criação
+     */
+    public boolean createWithId(T obj) throws Exception {
+        int id = obj.getId();
+        if (buscarIndice(id) != -1) {
+            return false; // ID já existe no índice
+        }
+        
+        // Atualiza o último ID se o ID manual for maior
+        arquivoDados.seek(0);
+        int ultimoID = arquivoDados.readInt();
+        if (id > ultimoID) {
+            arquivoDados.seek(0);
+            arquivoDados.writeInt(id);
+        }
+        
+        byte[] dados = obj.toByteArray();
+        long endereco = getDeleted(dados.length);
+        
+        if (endereco == -1) {
+            arquivoDados.seek(arquivoDados.length());
+            endereco = arquivoDados.getFilePointer();
+            arquivoDados.writeByte(' ');
+            arquivoDados.writeShort(dados.length);
+            arquivoDados.write(dados);
+        } else {
+            arquivoDados.seek(endereco);
+            arquivoDados.writeByte(' ');
+            arquivoDados.skipBytes(2);
+            arquivoDados.write(dados);
+        }
+        
+        inserirIndice(id, endereco);
+        return true;
+    }
+
+    /**
+     * Cria ou atualiza um registro.
+     * 
+     * @param obj Objeto a ser persistido
+     * @throws Exception Se houver erro na operação
+     */
+    public void save(T obj) throws Exception {
+        if (read(obj.getId()) == null) {
+            createWithId(obj);
+        } else {
+            update(obj);
+        }
+    }
     
     /**
      * Busca um registro pelo ID.

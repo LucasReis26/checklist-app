@@ -49,12 +49,7 @@ public class UsuarioTarefasManager {
         if (!tarefas.contains(idTarefa)) {
             tarefas.add(idTarefa);
             RegistroListaTarefas novoRegistro = new RegistroListaTarefas(idUsuario, tarefas);
-            
-            if (registro == null) {
-                arquivoRelacoes.create(novoRegistro);
-            } else {
-                arquivoRelacoes.update(novoRegistro);
-            }
+            arquivoRelacoes.save(novoRegistro);
         }
     }
     
