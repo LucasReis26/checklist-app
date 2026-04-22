@@ -1,14 +1,14 @@
 package com.checklist.demo.controller;
 
-import com.checklist.demo.Categoria;
-import com.checklist.demo.CategoriaDAO;
-import com.checklist.demo.Usuario;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.checklist.demo.dao.CategoriaDAO;
+import com.checklist.demo.model.Categoria;
+import com.checklist.demo.model.Usuario;
 
 @RestController
 @RequestMapping("/api/categorias")

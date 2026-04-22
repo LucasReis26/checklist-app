@@ -1,7 +1,5 @@
 package com.checklist.demo.controller;
 
-import com.checklist.demo.Usuario;
-import com.checklist.demo.UsuarioDAO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.checklist.demo.dao.UsuarioDAO;
+import com.checklist.demo.model.Usuario;
 
 @RestController
 @RequestMapping("/api/auth")

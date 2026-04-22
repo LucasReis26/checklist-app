@@ -1,15 +1,16 @@
 package com.checklist.demo.controller;
 
-import com.checklist.demo.LogConclusao;
-import com.checklist.demo.LogConclusaoDAO;
-import com.checklist.demo.TarefaDAO;
-import com.checklist.demo.Usuario;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.checklist.demo.dao.LogConclusaoDAO;
+import com.checklist.demo.dao.TarefaDAO;
+import com.checklist.demo.model.LogConclusao;
+import com.checklist.demo.model.Tarefa;
+import com.checklist.demo.model.Usuario;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -34,9 +35,9 @@ public class LogController {
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
-            java.util.List<com.checklist.demo.Tarefa> tarefas = tarefaDAO.buscarTarefasPorUsuario(user.getId());
+            java.util.List<com.checklist.demo.model.Tarefa> tarefas = tarefaDAO.buscarTarefasPorUsuario(user.getId());
             java.util.Set<Integer> taskIds = tarefas.stream()
-                .map(com.checklist.demo.Tarefa::getId)
+                .map(com.checklist.demo.model.Tarefa::getId)
                 .collect(java.util.stream.Collectors.toSet());
 
             List<LogConclusao> logs = logConclusaoDAO.listarTodos().stream()

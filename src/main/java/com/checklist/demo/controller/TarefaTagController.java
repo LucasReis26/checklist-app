@@ -1,14 +1,14 @@
 package com.checklist.demo.controller;
 
-import com.checklist.demo.TarefaTag;
-import com.checklist.demo.TarefaTagDAO;
-import com.checklist.demo.Usuario;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.checklist.demo.dao.TarefaTagDAO;
+import com.checklist.demo.model.TarefaTag;
+import com.checklist.demo.model.Usuario;
 
 @RestController
 @RequestMapping("/api/tarefa-tags")

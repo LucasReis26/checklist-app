@@ -1,14 +1,14 @@
 package com.checklist.demo.controller;
 
-import com.checklist.demo.Tarefa;
-import com.checklist.demo.TarefaDAO;
-import com.checklist.demo.Usuario;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.checklist.demo.dao.TarefaDAO;
+import com.checklist.demo.model.Tarefa;
+import com.checklist.demo.model.Usuario;
 
 @RestController
 @RequestMapping("/api/tarefas")

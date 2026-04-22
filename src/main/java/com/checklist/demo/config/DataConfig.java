@@ -1,6 +1,8 @@
 package com.checklist.demo.config;
 
-import com.checklist.demo.*;
+import com.checklist.demo.model.*;
+import com.checklist.demo.dao.*;
+import com.checklist.demo.persistence.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
