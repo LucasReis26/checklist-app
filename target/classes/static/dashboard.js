@@ -57,26 +57,32 @@ async function loadData() {
 
 // ---------- Helpers ----------
 function activeCategorias() {
-  return state.categorias.filter(c => !c.deletado);
+  return (state.categorias || []);
 }
 function activeTags() {
-  return state.tags.filter(t => !t.deletado);
+  return (state.tags || []);
 }
 function activeTarefas() {
-  return state.tarefas.filter(t => !t.deletado);
+  return (state.tarefas || []);
 }
 function tagsDeTarefa(idTarefa) {
+  if (!state.tarefa_tags) return [];
   const tagIds = state.tarefa_tags
     .filter(tt => tt.id_tarefa === idTarefa)
     .map(tt => tt.id_tag);
-  return state.tags.filter(t => tagIds.includes(t.id_tag) && !t.deletado);
+  return (state.tags || []).filter(t => tagIds.includes(t.id_tag));
 }
 function categoriaDeTarefa(idCategoria) {
-  return state.categorias.find(c => c.id_categoria === idCategoria);
+  return (state.categorias || []).find(c => c.id_categoria === idCategoria);
 }
 
 function formatDate(ts) {
   if (!ts) return '';
+  // Se for string YYYY-MM-DD
+  if (typeof ts === 'string' && ts.includes('-')) {
+    const [y, m, d] = ts.split('-');
+    return `${d}/${m}`;
+  }
   const d = new Date(ts);
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
@@ -88,12 +94,15 @@ function formatDateTime(ts) {
   });
 }
 function isOverdue(t) {
-  return t.status === 'pendente' && t.data_vencimento && t.data_vencimento < Date.now();
+  if (t.status === 'concluida' || !t.data_vencimento) return false;
+  const venc = new Date(t.data_vencimento + 'T23:59:59').getTime();
+  return venc < Date.now();
 }
 function dueLabel(t) {
   if (!t.data_vencimento) return null;
-  const days = Math.ceil((t.data_vencimento - Date.now()) / 86400000);
   if (t.status === 'concluida') return 'Concluída';
+  const venc = new Date(t.data_vencimento + 'T23:59:59').getTime();
+  const days = Math.ceil((venc - Date.now()) / 86400000);
   if (days < 0) return `Atrasada • ${Math.abs(days)}d`;
   if (days === 0) return 'Vence hoje';
   if (days === 1) return 'Vence amanhã';
@@ -117,6 +126,7 @@ function showToast(msg, type = 'success') {
 
 // ---------- Render ----------
 function render() {
+  if (!state.usuario) return; // Aguarda carregar usuário
   renderUser();
   renderCategorias();
   renderTags();
@@ -127,9 +137,10 @@ function render() {
 
 function renderUser() {
   const u = state.usuario;
-  document.getElementById('user-name').textContent = u.nome;
-  document.getElementById('user-email').textContent = u.email;
-  document.getElementById('user-avatar').textContent = u.nome.charAt(0).toUpperCase();
+  if (!u) return;
+  document.getElementById('user-name').textContent = u.nome || 'Usuário';
+  document.getElementById('user-email').textContent = u.email || '';
+  document.getElementById('user-avatar').textContent = (u.nome || 'U').charAt(0).toUpperCase();
 }
 
 function renderCategorias() {
