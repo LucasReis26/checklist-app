@@ -10,7 +10,7 @@
 
 **Link do Projeto:** [Checklist App](https://github.com/LucasReis26/checklist-app/tree/main)
 
-**Link do vídeo desta etapa:** [Exemplo de funcionamento do Projeto](https://www.youtube.com/watch?v=pTxAkDgStCI)
+**Link do vídeo desta etapa:** [Exemplo de funcionamento do Projeto](https://www.youtube.com/watch?v=d6M6odKO6dk)
 
 **Link para a fase I do projeto:**[Fase I do Projeto](https://github.com/LucasReis26/checklist-app/blob/main/docs/fase-i.md)
 
