@@ -7,6 +7,11 @@ Sistema de gerenciamento de tarefas, categorias e tags desenvolvido para a disci
 - Lucas Teixeira Reis
 - Thayná Andrade Caldeira Antunes
 
+## Entregas:
+
+- [Fase I](./docs/fase-i.md)
+- [Fase II](./docs/fase-ii.md)
+
 ## Descrição do Projeto
 O **Checklist App** é um sistema projetado para o cadastro e gerenciamento de Tarefas, Categorias e Tags. O sistema permite:
 - **CRUD completo**: Criação, leitura, atualização e exclusão de Tarefas, Categorias e Tags.
