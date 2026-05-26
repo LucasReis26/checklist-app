@@ -16,6 +16,7 @@ public class App extends Application {
     private CategoriaDAO categoriaDAO;
     private TagDAO tagDAO;
     private LogConclusaoDAO logDAO;
+    private TarefaTagDAO tarefaTagDAO;
 
     @Override
     public void init() throws Exception {
@@ -24,6 +25,7 @@ public class App extends Application {
         categoriaDAO = new CategoriaDAO();
         tagDAO = new TagDAO();
         logDAO = new LogConclusaoDAO();
+        tarefaTagDAO = new TarefaTagDAO();
     }
 
     @Override
@@ -169,6 +171,12 @@ public class App extends Application {
         Button btnRefresh = new Button("Atualizar");
         btnRefresh.setOnAction(e -> refreshTable(table, () -> tarefaDAO.listarTodas()));
 
+        Button btnOrder = new Button("Listar por ID (Ordenado)");
+        btnOrder.setOnAction(e -> refreshTable(table, () -> {
+            try { return tarefaDAO.listarOrdenado(); } 
+            catch(Exception ex) { showError("Erro na Árvore B+", ex); return null; }
+        }));
+
         HBox actions = new HBox(10);
         Button btnAdd = new Button("Adicionar");
         btnAdd.setOnAction(e -> showTarefaForm(null, table));
@@ -212,12 +220,77 @@ public class App extends Application {
             }
         });
 
-        actions.getChildren().addAll(btnAdd, btnEdit, btnConcluir, btnDelete, btnRefresh);
+        Button btnTags = new Button("Gerenciar Tags");
+        btnTags.setOnAction(e -> {
+            Tarefa selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) showTarefaTagsForm(selected);
+        });
+
+        actions.getChildren().addAll(btnAdd, btnEdit, btnConcluir, btnDelete, btnTags, btnRefresh, btnOrder);
         layout.getChildren().addAll(new Label("Gerenciamento de Tarefas"), table, actions);
         tab.setContent(layout);
 
         refreshTable(table, () -> tarefaDAO.listarTodas());
         return tab;
+    }
+
+    private void showTarefaTagsForm(Tarefa tarefa) {
+        Stage stage = new Stage();
+        stage.setTitle("Tags da Tarefa: " + tarefa.getTitulo());
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(20));
+
+        ListView<Tag> listTags = new ListView<>();
+        refreshTagsList(listTags, tarefa.getId());
+
+        HBox addBox = new HBox(10);
+        ComboBox<Tag> cbAllTags = new ComboBox<>();
+        cbAllTags.setConverter(new StringConverter<Tag>() {
+            @Override public String toString(Tag t) { return t == null ? "" : t.getNome(); }
+            @Override public Tag fromString(String s) { return null; }
+        });
+        try { cbAllTags.getItems().addAll(tagDAO.listarTodas()); } catch(Exception e) {}
+
+        Button btnAdd = new Button("Adicionar Tag");
+        btnAdd.setOnAction(e -> {
+            Tag selected = cbAllTags.getValue();
+            if (selected != null) {
+                try {
+                    tarefaTagDAO.incluirRelacionamento(new TarefaTag(selected.getId(), tarefa.getId()));
+                    refreshTagsList(listTags, tarefa.getId());
+                } catch (Exception ex) { showError("Erro ao associar tag", ex); }
+            }
+        });
+
+        Button btnRemove = new Button("Remover Tag Selecionada");
+        btnRemove.setOnAction(e -> {
+            Tag selected = listTags.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                try {
+                    tarefaTagDAO.excluirRelacionamento(selected.getId(), tarefa.getId());
+                    refreshTagsList(listTags, tarefa.getId());
+                } catch (Exception ex) { showError("Erro ao remover tag", ex); }
+            }
+        });
+
+        addBox.getChildren().addAll(cbAllTags, btnAdd);
+        layout.getChildren().addAll(new Label("Tags associadas:"), listTags, btnRemove, new Separator(), addBox);
+
+        stage.setScene(new Scene(layout, 400, 500));
+        stage.show();
+    }
+
+    private void refreshTagsList(ListView<Tag> list, int idTarefa) {
+        try {
+            List<TarefaTag> rels = tarefaTagDAO.buscarTagsPorTarefa(idTarefa);
+            List<Tag> tags = new java.util.ArrayList<>();
+            for (TarefaTag r : rels) {
+                Tag t = tagDAO.buscarTag(r.getIdTag());
+                if (t != null) tags.add(t);
+            }
+            list.getItems().setAll(tags);
+        } catch (Exception e) { showError("Erro ao carregar tags", e); }
     }
 
     private void showTarefaForm(Tarefa tarefa, TableView<Tarefa> table) {
@@ -423,6 +496,12 @@ public class App extends Application {
         Button btnRefresh = new Button("Atualizar");
         btnRefresh.setOnAction(e -> refreshTable(table, () -> tagDAO.listarTodas()));
 
+        Button btnOrder = new Button("Listar por ID (Ordenado)");
+        btnOrder.setOnAction(e -> refreshTable(table, () -> {
+            try { return tagDAO.listarOrdenado(); } 
+            catch(Exception ex) { showError("Erro na Árvore B+", ex); return null; }
+        }));
+
         HBox actions = new HBox(10);
         Button btnAdd = new Button("Adicionar");
         btnAdd.setOnAction(e -> showTagForm(null, table));
@@ -446,12 +525,39 @@ public class App extends Application {
             }
         });
 
-        actions.getChildren().addAll(btnAdd, btnEdit, btnDelete, btnRefresh);
+        Button btnVerTarefas = new Button("Ver Tarefas");
+        btnVerTarefas.setOnAction(e -> {
+            Tag selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) showTagTarefasList(selected);
+        });
+
+        actions.getChildren().addAll(btnAdd, btnEdit, btnDelete, btnVerTarefas, btnRefresh, btnOrder);
         layout.getChildren().addAll(new Label("Gerenciamento de Tags"), table, actions);
         tab.setContent(layout);
 
         refreshTable(table, () -> tagDAO.listarTodas());
         return tab;
+    }
+
+    private void showTagTarefasList(Tag tag) {
+        Stage stage = new Stage();
+        stage.setTitle("Tarefas com a Tag: " + tag.getNome());
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(20));
+
+        ListView<String> listTarefas = new ListView<>();
+        try {
+            List<TarefaTag> rels = tarefaTagDAO.buscarTarefasPorTag(tag.getId());
+            for (TarefaTag r : rels) {
+                Tarefa t = tarefaDAO.buscarTarefa(r.getIdTarefa());
+                if (t != null) listTarefas.getItems().add(t.getTitulo() + " (ID: " + t.getId() + ")");
+            }
+        } catch (Exception e) { showError("Erro ao carregar tarefas", e); }
+
+        layout.getChildren().addAll(new Label("Tarefas associadas:"), listTarefas);
+        stage.setScene(new Scene(layout, 400, 400));
+        stage.show();
     }
 
     private void showTagForm(Tag tag, TableView<Tag> table) {
@@ -548,6 +654,7 @@ public class App extends Application {
         if (categoriaDAO != null) categoriaDAO.close();
         if (tagDAO != null) tagDAO.close();
         if (logDAO != null) logDAO.close();
+        if (tarefaTagDAO != null) tarefaTagDAO.close();
     }
 
     public static void main(String[] args) {

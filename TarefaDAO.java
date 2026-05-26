@@ -321,6 +321,17 @@ public class TarefaDAO {
     }
     
     /**
+     * Lista todas as tarefas cadastradas de forma ordenada pelo ID.
+     * Utiliza a travessia dos nós folha da Árvore B+.
+     * 
+     * @return Lista de tarefas ordenadas
+     * @throws Exception Se houver erro na listagem
+     */
+    public List<Tarefa> listarOrdenado() throws Exception {
+        return arqTarefas.listInOrder();
+    }
+    
+    /**
      * Lista todas as tarefas cadastradas.
      * 
      * @return Lista com todas as tarefas

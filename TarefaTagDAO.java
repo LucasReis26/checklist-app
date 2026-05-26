@@ -14,57 +14,53 @@ import java.util.List;
 public class TarefaTagDAO {
     // Explicado em docs/aux/tarefaTagDAO/tarefaTagDAO.md
     private final ArquivoIndex<TarefaTag> arqTarefaTags;
+    private final HashIndexTarefaTags indexTarefaTags;
+    private final HashIndexTagTarefas indexTagTarefas;
 
     /**
      * Construtor da classe TarefaTagDAO.
-     * Inicializa o arquivo com índice para os relacionamentos.
+     * Inicializa o arquivo com índice para os relacionamentos e os índices Hash.
      * 
      * @throws Exception Se houver erro na inicialização
      */
     // Explicado em docs/aux/tarefaTagDAO/construtor.md
     public TarefaTagDAO() throws Exception {
         arqTarefaTags = new ArquivoIndex<>("tarefa_tags", TarefaTag.class.getConstructor());
+        indexTarefaTags = new HashIndexTarefaTags();
+        indexTagTarefas = new HashIndexTagTarefas();
     }
 
     /**
-     * Busca todas as tags associadas a uma tarefa.
-     * Realiza busca sequencial em todos os relacionamentos.
+     * Busca todas as tags associadas a uma tarefa de forma eficiente usando Hash.
      * 
      * @param idTarefa Identificador da tarefa
      * @return Lista de objetos TarefaTag da tarefa
      * @throws Exception Se houver erro na busca
      */
-    // Explicado em docs/aux/tarefaTagDAO/buscarTagsPorTarefa.md
     public List<TarefaTag> buscarTagsPorTarefa(int idTarefa) throws Exception {
         List<TarefaTag> resultado = new ArrayList<>();
-        List<TarefaTag> todos = arqTarefaTags.listAll();
+        List<Integer> idsTags = indexTarefaTags.buscar(idTarefa);
         
-        for (TarefaTag rel : todos) {
-            if (rel.getIdTarefa() == idTarefa) {
-                resultado.add(rel);
-            }
+        for (Integer idTag : idsTags) {
+            resultado.add(new TarefaTag(idTag, idTarefa));
         }
         
         return resultado;
     }
     
     /**
-     * Busca todas as tarefas associadas a uma tag.
-     * Realiza busca sequencial em todos os relacionamentos.
+     * Busca todas as tarefas associadas a uma tag de forma eficiente usando Hash.
      * 
      * @param idTag Identificador da tag
      * @return Lista de objetos TarefaTag da tag
      * @throws Exception Se houver erro na busca
      */
-    // Explicado em docs/aux/tarefaTagDAO/buscarTarefasPorTag.md
     public List<TarefaTag> buscarTarefasPorTag(int idTag) throws Exception {
         List<TarefaTag> resultado = new ArrayList<>();
-        List<TarefaTag> todos = arqTarefaTags.listAll();
+        List<Integer> idsTarefas = indexTagTarefas.buscar(idTag);
         
-        for (TarefaTag rel : todos) {
-            if (rel.getIdTag() == idTag) {
-                resultado.add(rel);
-            }
+        for (Integer idTarefa : idsTarefas) {
+            resultado.add(new TarefaTag(idTag, idTarefa));
         }
         
         return resultado;
@@ -72,63 +68,81 @@ public class TarefaTagDAO {
 
     /**
      * Cria uma nova associação entre uma tarefa e uma tag.
-     * Verifica se o relacionamento já existe para evitar duplicação.
+     * Atualiza os índices Hash em ambas as direções.
      * 
      * @param relacionamento Objeto TarefaTag a ser incluído
      * @return true se incluído com sucesso
      * @throws Exception Se o relacionamento já existir
      */
-    // Explicado em docs/aux/tarefaTagDAO/incluirRelacionamento.md
     public boolean incluirRelacionamento(TarefaTag relacionamento) throws Exception {
-        // Verificar se o relacionamento já existe
-        List<TarefaTag> existentes = buscarTagsPorTarefa(relacionamento.getIdTarefa());
-        for (TarefaTag existente : existentes) {
-            if (existente.getIdTag() == relacionamento.getIdTag()) {
-                throw new Exception("Relacionamento já existe!");
-            }
+        List<Integer> tagsAtuais = indexTarefaTags.buscar(relacionamento.getIdTarefa());
+        if (tagsAtuais.contains(relacionamento.getIdTag())) {
+            throw new Exception("Relacionamento já existe!");
         }
         
-        return arqTarefaTags.create(relacionamento) > 0;
+        if (arqTarefaTags.create(relacionamento) > 0) {
+            // Atualiza índice Tarefa -> Tags
+            tagsAtuais.add(relacionamento.getIdTag());
+            indexTarefaTags.inserir(relacionamento.getIdTarefa(), tagsAtuais);
+            
+            // Atualiza índice Tag -> Tarefas
+            List<Integer> tarefasAtuais = indexTagTarefas.buscar(relacionamento.getIdTag());
+            tarefasAtuais.add(relacionamento.getIdTarefa());
+            indexTagTarefas.inserir(relacionamento.getIdTag(), tarefasAtuais);
+            
+            return true;
+        }
+        return false;
     }
 
     /**
      * Remove a associação entre uma tag e uma tarefa.
+     * Atualiza os índices Hash em ambas as direções.
      * 
      * @param idTag Identificador da tag
      * @param idTarefa Identificador da tarefa
      * @return true se removido com sucesso
      * @throws Exception Se houver erro na remoção
      */
-    // Explicado em docs/aux/tarefaTagDAO/excluirRelacionamento.md
     public boolean excluirRelacionamento(int idTag, int idTarefa) throws Exception {
-        List<TarefaTag> relacionamentos = buscarTagsPorTarefa(idTarefa);
-        for (TarefaTag rel : relacionamentos) {
-            if (rel.getIdTag() == idTag) {
-                int idComposto = idTarefa * 1000000 + idTag;
-                return arqTarefaTags.delete(idComposto);
+        int idComposto = idTarefa * 1000000 + idTag;
+        if (arqTarefaTags.delete(idComposto)) {
+            // Atualiza índice Tarefa -> Tags
+            List<Integer> tagsAtuais = indexTarefaTags.buscar(idTarefa);
+            tagsAtuais.remove(Integer.valueOf(idTag));
+            if (tagsAtuais.isEmpty()) {
+                indexTarefaTags.remover(idTarefa);
+            } else {
+                indexTarefaTags.inserir(idTarefa, tagsAtuais);
             }
+            
+            // Atualiza índice Tag -> Tarefas
+            List<Integer> tarefasAtuais = indexTagTarefas.buscar(idTag);
+            tarefasAtuais.remove(Integer.valueOf(idTarefa));
+            if (tarefasAtuais.isEmpty()) {
+                indexTagTarefas.remover(idTag);
+            } else {
+                indexTagTarefas.inserir(idTag, tarefasAtuais);
+            }
+            
+            return true;
         }
         return false;
     }
     
     /**
      * Remove todas as associações de uma tarefa.
-     * Utilizado quando uma tarefa é excluída.
      * 
      * @param idTarefa Identificador da tarefa
      * @return true se todas as associações foram removidas
      * @throws Exception Se houver erro na remoção
      */
-    // Explicado em docs/aux/tarefaTagDAO/excluirTagsPorTarefa.md
     public boolean excluirTagsPorTarefa(int idTarefa) throws Exception {
-        List<TarefaTag> tags = buscarTagsPorTarefa(idTarefa);
-        boolean sucesso = true;
-        for (TarefaTag tag : tags) {
-            if (!excluirRelacionamento(tag.getIdTag(), idTarefa)) {
-                sucesso = false;
-            }
+        List<Integer> tags = indexTarefaTags.buscar(idTarefa);
+        for (Integer idTag : tags) {
+            excluirRelacionamento(idTag, idTarefa);
         }
-        return sucesso;
+        return true;
     }
     
     /**
@@ -137,18 +151,18 @@ public class TarefaTagDAO {
      * @return Lista com todos os relacionamentos
      * @throws Exception Se houver erro na listagem
      */
-    // Explicado em docs/aux/tarefaTagDAO/listarTodos.md
     public List<TarefaTag> listarTodos() throws Exception {
         return arqTarefaTags.listAll();
     }
     
     /**
-     * Fecha a conexão com o arquivo de relacionamentos.
+     * Fecha a conexão com os arquivos.
      * 
      * @throws Exception Se houver erro no fechamento
      */
-    // Explicado em docs/aux/tarefaTagDAO/close.md
     public void close() throws Exception {
         arqTarefaTags.close();
+        indexTarefaTags.close();
+        indexTagTarefas.close();
     }
 }

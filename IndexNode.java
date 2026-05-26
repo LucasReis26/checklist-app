@@ -201,34 +201,49 @@ public class IndexNode {
      * 
      * @param pos Posição do filho no pai
      * @param filho Nó filho que será dividido
+     * @param posNovoFilho Endereço físico do novo nó (necessário para encadeamento de folhas)
      * @throws Exception Se houver erro na divisão
      */
-    // Explicado em docs/aux/indexNode/dividirFilho.md
-    public void dividirFilho(int pos, IndexNode filho) throws Exception {
+    public IndexNode dividirFilho(int pos, IndexNode filho, long posNovoFilho) throws Exception {
         IndexNode novoFilho = new IndexNode(ordem, filho.isFolha());
         
         int meio = ordem / 2;
         
-        // Copia a segunda metade das chaves para o novo nó
-        for (int i = meio; i < ordem; i++) {
-            novoFilho.chaves[i - meio] = filho.chaves[i];
-            novoFilho.enderecos[i - meio] = filho.enderecos[i];
-            filho.chaves[i] = -1;
-            filho.enderecos[i] = -1;
-            novoFilho.numChaves++;
-            filho.numChaves--;
-        }
-        
-        if (!filho.isFolha()) {
-            for (int i = meio; i <= ordem; i++) {
-                novoFilho.filhos[i - meio] = filho.filhos[i];
+        // Se for folha, mantém o encadeamento
+        if (filho.isFolha()) {
+            novoFilho.setFilho(ordem, filho.getFilho(ordem));
+            filho.setFilho(ordem, posNovoFilho);
+            
+            // Copia a segunda metade das chaves para o novo nó
+            for (int i = meio; i < ordem; i++) {
+                novoFilho.chaves[i - meio] = filho.chaves[i];
+                novoFilho.enderecos[i - meio] = filho.enderecos[i];
+                filho.chaves[i] = -1;
+                filho.enderecos[i] = -1;
+                novoFilho.numChaves++;
+                filho.numChaves--;
+            }
+        } else {
+            // Se for nó interno, a chave do meio sobe e não fica no novo nó
+            for (int i = meio + 1; i < ordem; i++) {
+                novoFilho.chaves[i - (meio + 1)] = filho.chaves[i];
+                filho.chaves[i] = -1;
+                novoFilho.numChaves++;
+                filho.numChaves--;
+            }
+            for (int i = meio + 1; i <= ordem; i++) {
+                novoFilho.filhos[i - (meio + 1)] = filho.filhos[i];
                 filho.filhos[i] = -1;
             }
         }
         
-        int chaveMeio = filho.chaves[meio - 1];
+        int chaveMeio = filho.isFolha() ? novoFilho.chaves[0] : filho.chaves[meio];
+        if (!filho.isFolha()) {
+            filho.chaves[meio] = -1;
+            filho.numChaves--;
+        }
         
-        // Insere a chave do meio no nó pai
+        // Insere a chave que sobe no nó pai
         for (int i = numChaves; i > pos; i--) {
             chaves[i] = chaves[i-1];
             enderecos[i] = enderecos[i-1];
@@ -237,8 +252,10 @@ public class IndexNode {
         
         chaves[pos] = chaveMeio;
         enderecos[pos] = -1;
-        filhos[pos+1] = -1;
+        filhos[pos+1] = posNovoFilho;
         numChaves++;
+        
+        return novoFilho;
     }
     
     /**

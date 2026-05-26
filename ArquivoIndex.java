@@ -89,14 +89,18 @@ public class ArquivoIndex<T extends Registro> {
             if (raiz.estaCheia()) {
                 IndexNode novaRaiz = new IndexNode(ordemArvore, false);
                 novaRaiz.setFilho(0, raizIndice);
-                novaRaiz.dividirFilho(0, raiz);
                 
+                long posNovoFilho = arquivoIndice.length();
+                IndexNode novoFilhoNo = novaRaiz.dividirFilho(0, raiz, posNovoFilho);
+                
+                escreverNo(raiz, raizIndice);
+                escreverNo(novoFilhoNo, posNovoFilho);
                 raizIndice = escreverNo(novaRaiz);
                 atualizarCabecalhoIndice();
                 
-                inserirEmNo(novaRaiz, chave, endereco);
+                inserirEmNo(novaRaiz, raizIndice, chave, endereco);
             } else {
-                inserirEmNo(raiz, chave, endereco);
+                inserirEmNo(raiz, raizIndice, chave, endereco);
             }
         }
     }
@@ -105,23 +109,27 @@ public class ArquivoIndex<T extends Registro> {
      * Insere uma chave em um nó específico (recursivo).
      * 
      * @param no Nó atual da árvore
+     * @param posNo Endereço físico do nó atual
      * @param chave Chave a ser inserida
      * @param endereco Endereço associado à chave
      * @throws Exception Se houver erro na inserção
      */
-    // Explicado em docs/aux/arquivoIndex/inserirEmNo.md
-    private void inserirEmNo(IndexNode no, int chave, long endereco) throws Exception {
+    private void inserirEmNo(IndexNode no, long posNo, int chave, long endereco) throws Exception {
         if (no.isFolha()) {
             no.inserirChave(chave, endereco);
-            escreverNo(no);
+            escreverNo(no, posNo);
         } else {
             int pos = no.encontrarPosicaoChave(chave);
             long filhoPos = no.getFilho(pos);
             IndexNode filho = lerNo(filhoPos);
             
             if (filho.estaCheia()) {
-                no.dividirFilho(pos, filho);
-                escreverNo(no);
+                long posNovoFilho = arquivoIndice.length();
+                IndexNode novoFilhoNo = no.dividirFilho(pos, filho, posNovoFilho);
+                
+                escreverNo(filho, filhoPos);
+                escreverNo(novoFilhoNo, posNovoFilho);
+                escreverNo(no, posNo);
                 
                 if (chave > no.getChave(pos)) {
                     pos++;
@@ -129,8 +137,60 @@ public class ArquivoIndex<T extends Registro> {
                 filhoPos = no.getFilho(pos);
                 filho = lerNo(filhoPos);
             }
-            inserirEmNo(filho, chave, endereco);
+            inserirEmNo(filho, filhoPos, chave, endereco);
         }
+    }
+
+    /**
+     * Lista todos os registros em ordem crescente de ID utilizando a Árvore B+.
+     * 
+     * @return Lista de registros ordenados
+     * @throws Exception Se houver erro na leitura
+     */
+    public List<T> listInOrder() throws Exception {
+        List<T> lista = new ArrayList<>();
+        if (raizIndice == -1) return lista;
+
+        // 1. Encontrar a folha mais à esquerda
+        long posAtual = raizIndice;
+        IndexNode no = lerNo(posAtual);
+        while (!no.isFolha()) {
+            posAtual = no.getFilho(0);
+            no = lerNo(posAtual);
+        }
+
+        // 2. Percorrer o encadeamento de folhas
+        while (posAtual != -1) {
+            for (int i = 0; i < no.getNumChaves(); i++) {
+                long enderecoDado = no.getEndereco(i);
+                T registro = readByAddress(enderecoDado);
+                if (registro != null) {
+                    lista.add(registro);
+                }
+            }
+            posAtual = no.getFilho(ordemArvore);
+            if (posAtual != -1) no = lerNo(posAtual);
+        }
+
+        return lista;
+    }
+
+    private T readByAddress(long endereco) throws Exception {
+        if (endereco == -1) return null;
+        arquivoDados.seek(endereco);
+        byte lapide = arquivoDados.readByte();
+        if (lapide != ' ') return null;
+        short tamanho = arquivoDados.readShort();
+        byte[] dados = new byte[tamanho];
+        arquivoDados.read(dados);
+        T obj = construtor.newInstance();
+        obj.fromByteArray(dados);
+        return obj;
+    }
+
+    private void escreverNo(IndexNode no, long posicao) throws Exception {
+        arquivoIndice.seek(posicao);
+        arquivoIndice.write(no.toByteArray());
     }
     
     /**

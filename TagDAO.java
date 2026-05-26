@@ -97,6 +97,17 @@ public class TagDAO {
     }
     
     /**
+     * Lista todas as tags cadastradas de forma ordenada pelo ID.
+     * Utiliza a travessia dos nós folha da Árvore B+.
+     * 
+     * @return Lista de tags ordenadas
+     * @throws Exception Se houver erro na listagem
+     */
+    public List<Tag> listarOrdenado() throws Exception {
+        return arqTags.listInOrder();
+    }
+    
+    /**
      * Lista todas as tags cadastradas.
      * 
      * @return Lista com todas as tags
