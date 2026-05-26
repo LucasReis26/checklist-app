@@ -46,4 +46,3 @@ O projeto mantém uma estrutura organizada por responsabilidades:
 *   **Documentação:** Pasta `./docs/` contendo os manuais das fases I, II e III.
 
 ---
-**Nota:** A interface JavaFX foi atualizada para incluir botões de "Gerenciar Tags" (nas tarefas) e "Ver Tarefas" (nas tags), permitindo o uso prático de todas as funcionalidades N:N implementadas.
