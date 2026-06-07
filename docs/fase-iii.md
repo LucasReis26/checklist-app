@@ -1,5 +1,17 @@
 # Documentação Técnica - Fase III
 
+**Alunos:**
+
+- Felipe Portes Antunes
+- Lucas Teixeira Reis
+- Thayná Andrade Caldeira Antunes
+
+**Professor:** Walisson Ferreira de Carvalho
+
+**Link do Projeto:** [Checklist App](https://github.com/LucasReis26/checklist-app/tree/main)
+
+**Link do vídeo desta etapa:** [Exemplo de funcionamento do Projeto](https://www.youtube.com/watch?v=WUc6TlEErX0)
+
 ## Relatório Técnico e Formulário
 
 Este documento descreve as implementações realizadas na Fase III do projeto Checklist App, focando no relacionamento N:N e nas estruturas de indexação.

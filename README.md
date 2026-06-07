@@ -11,6 +11,8 @@ Sistema de gerenciamento de tarefas, categorias e tags desenvolvido para a disci
 
 - [Fase I](./docs/fase-i.md)
 - [Fase II](./docs/fase-ii.md)
+- [Fase III](./docs/fase-iii.md)
+- [Fase IV](./docs/fase-iv.md)
 
 ## Descrição do Projeto
 O **Checklist App** é um sistema projetado para o cadastro e gerenciamento de Tarefas, Categorias e Tags. O sistema permite:
