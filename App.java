@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,7 @@ public class App extends Application {
         tabPane.getTabs().add(createCategoriasTab());
         tabPane.getTabs().add(createTagsTab());
         tabPane.getTabs().add(createLogsTab());
+        tabPane.getTabs().add(createBackupTab());
 
         Scene scene = new Scene(tabPane, 1100, 750);
         primaryStage.setScene(scene);
@@ -616,6 +618,88 @@ public class App extends Application {
         tab.setContent(layout);
 
         refreshTable(table, () -> logDAO.listarTodos());
+        return tab;
+    }
+
+    // --- BACKUP ---
+    private Tab createBackupTab() {
+        Tab tab = new Tab("Backup");
+        tab.setClosable(false);
+        
+        VBox layout = new VBox(15);
+        layout.setPadding(new Insets(20));
+        
+        Label title = new Label("Gerenciamento de Backup");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        
+        Label infoLabel = new Label();
+        infoLabel.setWrapText(true);
+        
+        // Botão Backup Huffman
+        Button btnHuffman = new Button("Backup com Huffman");
+        btnHuffman.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        btnHuffman.setPrefWidth(250);
+        btnHuffman.setOnAction(e -> {
+            infoLabel.setText("Executando backup Huffman...");
+            new Thread(() -> {
+                try {
+                    String result = BackupManager.backupHuffman();
+                    javafx.application.Platform.runLater(() -> 
+                        infoLabel.setText("✓ Backup Huffman concluído: " + result));
+                } catch (Exception ex) {
+                    javafx.application.Platform.runLater(() -> 
+                        infoLabel.setText("✗ Erro no backup Huffman: " + ex.getMessage()));
+                }
+            }).start();
+        });
+        
+        // Botão Backup LZW
+        Button btnLZW = new Button("Backup com LZW");
+        btnLZW.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
+        btnLZW.setPrefWidth(250);
+        btnLZW.setOnAction(e -> {
+            infoLabel.setText("Executando backup LZW...");
+            new Thread(() -> {
+                try {
+                    String result = BackupManager.backupLZW();
+                    javafx.application.Platform.runLater(() -> 
+                        infoLabel.setText("✓ Backup LZW concluído: " + result));
+                } catch (Exception ex) {
+                    javafx.application.Platform.runLater(() -> 
+                        infoLabel.setText("✗ Erro no backup LZW: " + ex.getMessage()));
+                }
+            }).start();
+        });
+        
+        // Botão Listar Backups
+        Button btnList = new Button("Listar Backups");
+        btnList.setOnAction(e -> {
+            try {
+                File backupDir = new File("./backups");
+                if (!backupDir.exists()) {
+                    infoLabel.setText("Nenhum backup encontrado.");
+                    return;
+                }
+                StringBuilder sb = new StringBuilder("Backups disponíveis:\n");
+                for (File f : backupDir.listFiles()) {
+                    if (f.getName().endsWith(".huf") || f.getName().endsWith(".lzw")) {
+                        sb.append("  • ").append(f.getName()).append(" (")
+                          .append(String.format("%,d", f.length())).append(" bytes)\n");
+                    }
+                }
+                infoLabel.setText(sb.toString());
+            } catch (Exception ex) {
+                infoLabel.setText("Erro: " + ex.getMessage());
+            }
+        });
+        
+        HBox buttonBox = new HBox(15, btnHuffman, btnLZW, btnList);
+        buttonBox.setAlignment(javafx.geometry.Pos.CENTER);
+        
+        layout.getChildren().addAll(title, buttonBox, infoLabel);
+        layout.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+        
+        tab.setContent(layout);
         return tab;
     }
 

@@ -27,6 +27,7 @@ public class Principal {
                 System.out.println("3 - Categorias");
                 System.out.println("4 - Tags");
                 System.out.println("5 - Logs de Conclusão");
+                System.out.println("6 - Backup/Restauração"); 
                 System.out.println("0 - Sair");
 
                 System.out.print("\nOpção: ");
@@ -56,6 +57,10 @@ public class Principal {
                     case 5 -> {
                         MenuLogs menuLogs = new MenuLogs();
                         menuLogs.menu();
+                    }
+                    case 6 -> {
+                        MenuBackup menuBackup = new MenuBackup();
+                        menuBackup.menu();
                     }
                     case 0 -> System.out.println("Saindo...");
                     default -> System.out.println("Opção inválida!");
