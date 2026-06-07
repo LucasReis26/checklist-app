@@ -25,7 +25,7 @@ A busca é realizada em duas frentes:
 ### 5. Como o sistema trata a integridade referencial (remoção/atualização) entre as tabelas?
 A integridade é tratada na camada DAO:
 *   **Exclusão de Tag:** O `TagDAO` verifica no `TarefaTagDAO` se existem tarefas associadas à tag antes de permitir a exclusão. Se houver, a operação é impedida com uma exceção.
-*   **Exclusão de Tarefa:** Ao excluir uma tarefa, o `TarefaDAO` primeiro remove todas as suas associações no `TarefaTagDAO` e verifica se existem logs de conclusão, garantindo que não fiquem "órfãos" no sistema.
+*   **Exclusão de Tarefa:** Ao excluir uma tarefa, o `TarefaDAO` remove automaticamente todas as suas associações no `TarefaTagDAO` e também exclui todos os logs de conclusão associados, garantindo a integridade referencial e evitando dados órfãos.
 
 ### 6. Como foi organizada a persistência dos dados dessa nova tabela (mesmo padrão de cabeçalho e lápide)?
 A nova tabela associativa utiliza a classe `ArquivoIndex<TarefaTag>`, que segue rigorosamente o padrão de:

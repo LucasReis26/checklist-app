@@ -349,11 +349,22 @@ public class ArquivoIndex<T extends Registro> {
      */
     // Explicado em docs/aux/arquivoIndex/create.md
     public int create(T obj) throws Exception {
-        arquivoDados.seek(0);
-        int novoID = arquivoDados.readInt() + 1;
-        arquivoDados.seek(0);
-        arquivoDados.writeInt(novoID);
-        obj.setId(novoID);
+        int id = obj.getId();
+        if (id <= 0) {
+            arquivoDados.seek(0);
+            id = arquivoDados.readInt() + 1;
+            arquivoDados.seek(0);
+            arquivoDados.writeInt(id);
+            obj.setId(id);
+        } else {
+            // Se o ID foi definido manualmente, garantir que o cabeçalho esteja atualizado
+            arquivoDados.seek(0);
+            int ultimoID = arquivoDados.readInt();
+            if (id > ultimoID) {
+                arquivoDados.seek(0);
+                arquivoDados.writeInt(id);
+            }
+        }
         
         byte[] dados = obj.toByteArray();
         long endereco = getDeleted(dados.length);
@@ -371,9 +382,9 @@ public class ArquivoIndex<T extends Registro> {
             arquivoDados.write(dados);
         }
         
-        inserirIndice(novoID, endereco);
+        inserirIndice(id, endereco);
         
-        return novoID;
+        return id;
     }
     
     /**

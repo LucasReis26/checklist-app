@@ -328,11 +328,6 @@ public class MenuTarefas {
             System.out.println("\nTarefa a ser excluída:");
             System.out.println(tarefa);
             
-            List<Integer> logs = tarefaDAO.getLogsDaTarefa(id);
-            if (!logs.isEmpty()) {
-                System.out.println("\nATENÇÃO: Esta tarefa possui " + logs.size() + " log(s) de conclusão!");
-            }
-            
             System.out.print("\nConfirma exclusão? (S/N): ");
             char resp = console.next().charAt(0);
             console.nextLine();
@@ -382,19 +377,14 @@ public class MenuTarefas {
                 }
             }
             
-            System.out.print("Resumo das tags (opcional): ");
-            String resumoTags = console.nextLine();
-            
             long inicio = System.nanoTime();
-            if (tarefaDAO.concluirTarefa(id, resumoTags)) {
+            if (tarefaDAO.concluirTarefa(id, "")) {
                 long fim = System.nanoTime();
                 System.out.println("Tarefa concluída com sucesso!");
                 
                 LogConclusao ultimoLog = tarefaDAO.buscarUltimoLogDaTarefa(id);
                 if (ultimoLog != null) {
-                    System.out.println("Log gerado:");
-                    System.out.println("  Data: " + ultimoLog.getDataConclusao());
-                    System.out.println("  Resumo: " + ultimoLog.getResumoTags());
+                    System.out.println("Log gerado em: " + ultimoLog.getDataConclusao());
                 }
                 
                 System.out.printf("Tempo de conclusão: %.3f ms%n", (fim - inicio) / 1_000_000.0);

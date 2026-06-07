@@ -168,7 +168,23 @@ public class App extends Application {
             } catch (Exception e) { return new SimpleStringProperty("Erro"); }
         });
 
-        table.getColumns().addAll(userCol, catCol, createColumn("Status", "status"), createColumn("Vencimento", "dataVencimento"));
+        TableColumn<Tarefa, String> tagsCol = new TableColumn<>("Tags");
+        tagsCol.setCellValueFactory(cell -> {
+            try {
+                List<TarefaTag> tts = tarefaTagDAO.buscarTagsPorTarefa(cell.getValue().getId());
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < tts.size(); i++) {
+                    Tag t = tagDAO.buscarTag(tts.get(i).getIdTag());
+                    if (t != null) {
+                        sb.append(t.getNome());
+                        if (i < tts.size() - 1) sb.append(", ");
+                    }
+                }
+                return new SimpleStringProperty(sb.toString());
+            } catch (Exception e) { return new SimpleStringProperty("Erro"); }
+        });
+
+        table.getColumns().addAll(userCol, catCol, tagsCol, createColumn("Status", "status"), createColumn("Vencimento", "dataVencimento"));
 
         Button btnRefresh = new Button("Atualizar");
         btnRefresh.setOnAction(e -> refreshTable(table, () -> tarefaDAO.listarTodas()));
@@ -193,19 +209,12 @@ public class App extends Application {
         btnConcluir.setOnAction(e -> {
             Tarefa selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                TextInputDialog dialog = new TextInputDialog("");
-                dialog.setTitle("Concluir Tarefa");
-                dialog.setHeaderText("Concluir tarefa: " + selected.getTitulo());
-                dialog.setContentText("Resumo das tags (opcional):");
-                Optional<String> result = dialog.showAndWait();
-                result.ifPresent(tags -> {
-                    try {
-                        tarefaDAO.concluirTarefa(selected.getId(), tags);
-                        refreshTable(table, () -> tarefaDAO.listarTodas());
-                    } catch (Exception ex) {
-                        showError("Erro ao concluir", ex);
-                    }
-                });
+                try {
+                    tarefaDAO.concluirTarefa(selected.getId(), "");
+                    refreshTable(table, () -> tarefaDAO.listarTodas());
+                } catch (Exception ex) {
+                    showError("Erro ao concluir", ex);
+                }
             }
         });
 
@@ -222,77 +231,12 @@ public class App extends Application {
             }
         });
 
-        Button btnTags = new Button("Gerenciar Tags");
-        btnTags.setOnAction(e -> {
-            Tarefa selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) showTarefaTagsForm(selected);
-        });
-
-        actions.getChildren().addAll(btnAdd, btnEdit, btnConcluir, btnDelete, btnTags, btnRefresh, btnOrder);
+        actions.getChildren().addAll(btnAdd, btnEdit, btnConcluir, btnDelete, btnRefresh, btnOrder);
         layout.getChildren().addAll(new Label("Gerenciamento de Tarefas"), table, actions);
         tab.setContent(layout);
 
         refreshTable(table, () -> tarefaDAO.listarTodas());
         return tab;
-    }
-
-    private void showTarefaTagsForm(Tarefa tarefa) {
-        Stage stage = new Stage();
-        stage.setTitle("Tags da Tarefa: " + tarefa.getTitulo());
-
-        VBox layout = new VBox(10);
-        layout.setPadding(new Insets(20));
-
-        ListView<Tag> listTags = new ListView<>();
-        refreshTagsList(listTags, tarefa.getId());
-
-        HBox addBox = new HBox(10);
-        ComboBox<Tag> cbAllTags = new ComboBox<>();
-        cbAllTags.setConverter(new StringConverter<Tag>() {
-            @Override public String toString(Tag t) { return t == null ? "" : t.getNome(); }
-            @Override public Tag fromString(String s) { return null; }
-        });
-        try { cbAllTags.getItems().addAll(tagDAO.listarTodas()); } catch(Exception e) {}
-
-        Button btnAdd = new Button("Adicionar Tag");
-        btnAdd.setOnAction(e -> {
-            Tag selected = cbAllTags.getValue();
-            if (selected != null) {
-                try {
-                    tarefaTagDAO.incluirRelacionamento(new TarefaTag(selected.getId(), tarefa.getId()));
-                    refreshTagsList(listTags, tarefa.getId());
-                } catch (Exception ex) { showError("Erro ao associar tag", ex); }
-            }
-        });
-
-        Button btnRemove = new Button("Remover Tag Selecionada");
-        btnRemove.setOnAction(e -> {
-            Tag selected = listTags.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                try {
-                    tarefaTagDAO.excluirRelacionamento(selected.getId(), tarefa.getId());
-                    refreshTagsList(listTags, tarefa.getId());
-                } catch (Exception ex) { showError("Erro ao remover tag", ex); }
-            }
-        });
-
-        addBox.getChildren().addAll(cbAllTags, btnAdd);
-        layout.getChildren().addAll(new Label("Tags associadas:"), listTags, btnRemove, new Separator(), addBox);
-
-        stage.setScene(new Scene(layout, 400, 500));
-        stage.show();
-    }
-
-    private void refreshTagsList(ListView<Tag> list, int idTarefa) {
-        try {
-            List<TarefaTag> rels = tarefaTagDAO.buscarTagsPorTarefa(idTarefa);
-            List<Tag> tags = new java.util.ArrayList<>();
-            for (TarefaTag r : rels) {
-                Tag t = tagDAO.buscarTag(r.getIdTag());
-                if (t != null) tags.add(t);
-            }
-            list.getItems().setAll(tags);
-        } catch (Exception e) { showError("Erro ao carregar tags", e); }
     }
 
     private void showTarefaForm(Tarefa tarefa, TableView<Tarefa> table) {
@@ -316,13 +260,34 @@ public class App extends Application {
             @Override public Categoria fromString(String s) { return null; }
         });
 
+        ListView<Tag> listTags = new ListView<>();
+        listTags.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        listTags.setPrefHeight(120);
+        listTags.setCellFactory(lv -> new ListCell<Tag>() {
+            @Override
+            protected void updateItem(Tag item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item.getNome());
+            }
+        });
+
         try {
             cbUser.getItems().addAll(usuarioDAO.listarTodos());
             cbCat.getItems().addAll(categoriaDAO.listarTodas());
+            listTags.getItems().addAll(tagDAO.listarTodas());
             
             if (tarefa != null) {
                 for(Usuario u : cbUser.getItems()) if(u.getId() == tarefa.getIdUser()) cbUser.setValue(u);
                 for(Categoria c : cbCat.getItems()) if(c.getId() == tarefa.getIdCategoria()) cbCat.setValue(c);
+                
+                List<TarefaTag> currentRels = tarefaTagDAO.buscarTagsPorTarefa(tarefa.getId());
+                for (Tag t : listTags.getItems()) {
+                    for (TarefaTag r : currentRels) {
+                        if (r.getIdTag() == t.getId()) {
+                            listTags.getSelectionModel().select(t);
+                        }
+                    }
+                }
             }
         } catch (Exception e) {}
 
@@ -346,6 +311,8 @@ public class App extends Application {
         grid.add(txtVenc, 1, 4);
         grid.add(new Label("Status:"), 0, 5);
         grid.add(cbStatus, 1, 5);
+        grid.add(new Label("Tags:"), 0, 6);
+        grid.add(listTags, 1, 6);
 
         Button btnSave = new Button("Salvar");
         btnSave.setOnAction(e -> {
@@ -354,8 +321,14 @@ public class App extends Application {
                 int catId = cbCat.getValue() != null ? cbCat.getValue().getId() : 0;
                 
                 if (tarefa == null) {
-                    tarefaDAO.incluirTarefa(new Tarefa(userId, catId, txtTitulo.getText(), txtDesc.getText(), 
-                        "2023-01-01", cbStatus.getValue(), txtVenc.getText()));
+                    Tarefa novaTarefa = new Tarefa(userId, catId, txtTitulo.getText(), txtDesc.getText(), 
+                        new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()), 
+                        cbStatus.getValue(), txtVenc.getText());
+                    if (tarefaDAO.incluirTarefa(novaTarefa)) {
+                        for (Tag tag : listTags.getSelectionModel().getSelectedItems()) {
+                            tarefaTagDAO.incluirRelacionamento(new TarefaTag(tag.getId(), novaTarefa.getId()));
+                        }
+                    }
                 } else {
                     tarefa.setIdUser(userId);
                     tarefa.setIdCategoria(catId);
@@ -363,7 +336,12 @@ public class App extends Application {
                     tarefa.setDescricao(txtDesc.getText());
                     tarefa.setStatus(cbStatus.getValue());
                     tarefa.setDataVencimento(txtVenc.getText());
-                    tarefaDAO.alterarTarefa(tarefa);
+                    if (tarefaDAO.alterarTarefa(tarefa)) {
+                        tarefaTagDAO.excluirTagsPorTarefa(tarefa.getId());
+                        for (Tag tag : listTags.getSelectionModel().getSelectedItems()) {
+                            tarefaTagDAO.incluirRelacionamento(new TarefaTag(tag.getId(), tarefa.getId()));
+                        }
+                    }
                 }
                 refreshTable(table, () -> tarefaDAO.listarTodas());
                 stage.close();
@@ -372,7 +350,7 @@ public class App extends Application {
             }
         });
 
-        grid.add(btnSave, 1, 6);
+        grid.add(btnSave, 1, 7);
         stage.setScene(new Scene(grid));
         stage.show();
     }

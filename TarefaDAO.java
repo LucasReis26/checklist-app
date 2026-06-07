@@ -232,21 +232,19 @@ public class TarefaDAO {
             return false;
         }
         
-        // Verificar logs associados
-        int numLogs = tarefaLogsManager.contarLogsDaTarefa(id);
-        if (numLogs > 0) {
-            throw new Exception("Não é possível excluir tarefa pois existem " + 
-                               numLogs + " logs de conclusão associados!");
+        // Remover logs associados automaticamente
+        List<Integer> logs = tarefaLogsManager.buscarLogsDaTarefa(id);
+        LogConclusaoDAO logDAO = new LogConclusaoDAO();
+        for (Integer idLog : logs) {
+            logDAO.excluirLog(idLog);
         }
+        tarefaLogsManager.removerLogsDaTarefa(id);
+        logDAO.close();
         
-        // Verificar tags associadas
-        List<TarefaTag> tags = getTarefaTagDAO().buscarTagsPorTarefa(id);
-        if (!tags.isEmpty()) {
-            throw new Exception("Não é possível excluir tarefa pois existem " + 
-                               tags.size() + " tags associadas!");
-        }
+        // Remover tags associadas automaticamente
+        getTarefaTagDAO().excluirTagsPorTarefa(id);
         
-        // Remover dos relacionamentos
+        // Remover dos relacionamentos de usuário e categoria
         usuarioTarefasManager.removerTarefa(tarefa.getIdUser(), id);
         if (tarefa.getIdCategoria() > 0) {
             categoriaTarefasManager.removerTarefa(tarefa.getIdCategoria(), id);

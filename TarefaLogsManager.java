@@ -82,6 +82,17 @@ public class TarefaLogsManager {
     }
     
     /**
+     * Remove todos os logs associados a uma tarefa do gerenciador de relações.
+     * 
+     * @param idTarefa Identificador da tarefa
+     * @return true se removido com sucesso
+     * @throws Exception Se houver erro na operação
+     */
+    public boolean removerLogsDaTarefa(int idTarefa) throws Exception {
+        return arquivoRelacoes.delete(idTarefa);
+    }
+    
+    /**
      * Busca todos os logs associados a uma tarefa.
      * 
      * @param idTarefa Identificador da tarefa
