@@ -34,18 +34,18 @@ Este documento descreve as implementações realizadas na Fase IV do projeto Che
 
 #### Dificuldades Huffman:
 1.  **Persistência da Árvore:** Para que a descompressão funcione, o descompressor precisa da mesma árvore de Huffman usada na compressão.
-    *   **Solução:** Implementei um cabeçalho no arquivo comprimido que armazena a tabela de frequências de cada byte. Assim, o descompressor reconstrói a árvore de forma idêntica antes de iniciar a leitura dos dados.
+    *   **Solução:** Implementamos um cabeçalho no arquivo comprimido que armazena a tabela de frequências de cada byte. Assim, o descompressor reconstrói a árvore de forma idêntica antes de iniciar a leitura dos dados.
 2.  **Manipulação de Bits:** Java trabalha nativamente com bytes, mas Huffman gera códigos de comprimentos variáveis de bits.
-    *   **Solução:** Utilizei um `StringBuilder` para acumular a sequência de bits como strings '0' e '1' e depois converti essa string em um array de bytes, tratando o "padding" no último byte através da gravação da quantidade exata de bits válidos no cabeçalho.
+    *   **Solução:** Utilizamos um `StringBuilder` para acumular a sequência de bits como strings '0' e '1' e depois convertemos essa string em um array de bytes, tratando o "padding" no último byte através da gravação da quantidade exata de bits válidos no cabeçalho.
 
 #### Dificuldades LZW:
 1.  **Gerenciamento do Dicionário:** O dicionário pode crescer indefinidamente, consumindo muita memória.
-    *   **Solução:** Limitei o tamanho do dicionário a 4096 entradas (12 bits por código). Uma vez atingido esse limite, o algoritmo para de adicionar novas sequências e continua a compressão usando apenas os padrões já mapeados.
+    *   **Solução:** Limitamos o tamanho do dicionário a 4096 entradas (12 bits por código). Uma vez atingido esse limite, o algoritmo para de adicionar novas sequências e continua a compressão usando apenas os padrões já mapeados.
 2.  **Empacotamento de Códigos de 12 bits:** Gravar códigos de 12 bits em um sistema de arquivos baseado em bytes (8 bits) exige deslocamento de bits.
-    *   **Solução:** Implementei um sistema de "bit buffering" que acumula os bits dos códigos de 12 bits e descarrega bytes completos (8 bits) conforme o buffer enche, garantindo o uso eficiente do espaço.
+    *   **Solução:** Implementamos um sistema de "bit buffering" que acumula os bits dos códigos de 12 bits e descarrega bytes completos (8 bits) conforme o buffer enche, garantindo o uso eficiente do espaço.
 
 #### Dificuldade Geral (Backup de Múltiplos Arquivos):
 *   **Compactação em Arquivo Único:** O requisito exigia um único arquivo compactado contendo todos os arquivos de dados do sistema.
-*   **Solução:** Criei um formato de "pre-bundle" no `BackupManager`. Antes de comprimir, todos os arquivos do diretório `./dados` são lidos e concatenados em um único array de bytes seguindo a estrutura: `[Nome do Arquivo (UTF)][Tamanho (Long)][Conteúdo (Bytes)]`. Esse array gigante é então enviado para o algoritmo de compressão. Na descompressão, o processo inverso restaura cada arquivo em seu local original.
+*   **Solução:** Criamos um formato de "pre-bundle" no `BackupManager`. Antes de comprimir, todos os arquivos do diretório `./dados` são lidos e concatenados em um único array de bytes seguindo a estrutura: `[Nome do Arquivo (UTF)][Tamanho (Long)][Conteúdo (Bytes)]`. Esse array gigante é então enviado para o algoritmo de compressão. Na descompressão, o processo inverso restaura cada arquivo em seu local original.
 
 ---
