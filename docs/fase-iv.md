@@ -10,7 +10,7 @@
 
 **Link do Projeto:** [Checklist App](https://github.com/LucasReis26/checklist-app/tree/main)
 
-**Link do vídeo desta etapa:** [Exemplo de funcionamento do Backup]()
+**Link do vídeo desta etapa:** [Exemplo de funcionamento do Backup](https://youtu.be/QKgJv5htYl4)
 
 ## Relatório Técnico e Formulário
 
