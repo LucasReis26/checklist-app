@@ -47,6 +47,11 @@ public class HashExtensivel<T extends Registro> {
     }
     
     private void inicializarArquivo() throws Exception {
+        // Reservar espaço para o cabeçalho
+        arquivo.seek(0);
+        byte[] cabecalhoVazio = new byte[TAM_CABECALHO];
+        arquivo.write(cabecalhoVazio);
+        
         // Criar buckets iniciais
         long b0 = criarBucket(1);
         long b1 = criarBucket(1);
@@ -57,7 +62,7 @@ public class HashExtensivel<T extends Registro> {
         arquivo.writeLong(b0);
         arquivo.writeLong(b1);
         
-        // Escrever cabeçalho
+        // Escrever cabeçalho real
         atualizarCabecalho();
     }
     
@@ -140,6 +145,15 @@ public class HashExtensivel<T extends Registro> {
         int indice = hash(chave) % (1 << profundidadeGlobal);
         long posBucket = lerPosicaoDiretorio(indice);
         Bucket bucket = lerBucket(posBucket);
+        
+        // Verifica se a chave já existe no bucket e atualiza se encontrar
+        for (int i = 0; i < bucket.getRegistros().size(); i++) {
+            if (bucket.getRegistros().get(i).getChave() == chave) {
+                bucket.getRegistros().set(i, new ParChaveEndereco(chave, endereco));
+                escreverBucket(bucket);
+                return;
+            }
+        }
         
         if (bucket.getQuantidade() < tamanhoBucket) {
             bucket.inserir(chave, endereco);
