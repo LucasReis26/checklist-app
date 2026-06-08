@@ -121,6 +121,11 @@ public class ArquivoIndex<T extends Registro> {
             escreverNo(no, posNo);
         } else {
             int pos = no.encontrarPosicaoChave(chave);
+            // Ajuste para B+ Tree: se a chave é igual ao separador, deve ir para o filho da direita
+            if (pos < no.getNumChaves() && chave == no.getChave(pos)) {
+                pos++;
+            }
+            
             long filhoPos = no.getFilho(pos);
             IndexNode filho = lerNo(filhoPos);
             
@@ -132,7 +137,7 @@ public class ArquivoIndex<T extends Registro> {
                 escreverNo(novoFilhoNo, posNovoFilho);
                 escreverNo(no, posNo);
                 
-                if (chave > no.getChave(pos)) {
+                if (chave >= no.getChave(pos)) {
                     pos++;
                 }
                 filhoPos = no.getFilho(pos);
@@ -220,6 +225,14 @@ public class ArquivoIndex<T extends Registro> {
      */
     // Explicado em docs/aux/arquivoIndex/buscarEmNo.md
     private long buscarEmNo(IndexNode no, int chave) throws Exception {
+        return buscarEmNo(no, chave, 0);
+    }
+
+    private long buscarEmNo(IndexNode no, int chave, int altura) throws Exception {
+        if (altura > 100) { // Proteção contra recursão infinita (árvore muito profunda ou ciclo)
+            throw new Exception("Erro no índice: profundidade excessiva detectada.");
+        }
+        
         int pos = no.encontrarPosicaoChave(chave);
         
         if (no.isFolha()) {
@@ -228,9 +241,15 @@ public class ArquivoIndex<T extends Registro> {
             }
             return -1;
         } else {
+            // No nó interno, se chave == chaves[pos], precisamos ir para o filho da DIREITA (pos + 1)
+            // porque no B+ Tree o separador é o menor valor do filho da direita.
+            if (pos < no.getNumChaves() && chave == no.getChave(pos)) {
+                pos++;
+            }
             long filhoPos = no.getFilho(pos);
+            if (filhoPos == -1) return -1;
             IndexNode filho = lerNo(filhoPos);
-            return buscarEmNo(filho, chave);
+            return buscarEmNo(filho, chave, altura + 1);
         }
     }
     
@@ -248,7 +267,7 @@ public class ArquivoIndex<T extends Registro> {
         }
         
         IndexNode raiz = lerNo(raizIndice);
-        boolean removido = removerEmNo(raiz, chave);
+        boolean removido = removerEmNo(raiz, raizIndice, chave);
         
         if (!raiz.isFolha() && raiz.getNumChaves() == 0) {
             raizIndice = raiz.getFilho(0);
@@ -267,23 +286,26 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na remoção
      */
     // Explicado em docs/aux/arquivoIndex/removerEmNo.md
-    private boolean removerEmNo(IndexNode no, int chave) throws Exception {
+    private boolean removerEmNo(IndexNode no, long posNo, int chave) throws Exception {
         int pos = no.encontrarPosicaoChave(chave);
         
         if (no.isFolha()) {
             if (pos < no.getNumChaves() && no.getChave(pos) == chave) {
                 no.removerChave(pos);
-                escreverNo(no);
+                escreverNo(no, posNo);
                 return true;
             }
             return false;
         } else {
+            if (pos < no.getNumChaves() && chave == no.getChave(pos)) {
+                pos++;
+            }
             long filhoPos = no.getFilho(pos);
             IndexNode filho = lerNo(filhoPos);
-            boolean removido = removerEmNo(filho, chave);
+            boolean removido = removerEmNo(filho, filhoPos, chave);
             
             if (filho.getNumChaves() < ordemArvore / 2) {
-                rebalancear(no, pos, filho);
+                rebalancear(no, posNo, pos, filho, filhoPos);
             }
             
             return removido;
@@ -294,50 +316,56 @@ public class ArquivoIndex<T extends Registro> {
      * Rebalanceia a árvore após remoção, redistribuindo chaves entre irmãos.
      * 
      * @param pai Nó pai
-     * @param pos Posição do filho no pai
+     * @param posPai Endereço do pai
+     * @param posFilhoNoPai Posição do filho no pai
      * @param filho Nó filho que ficou desbalanceado
+     * @param posFilho Endereço do filho
      * @throws Exception Se houver erro no rebalanceamento
      */
     // Explicado em docs/aux/arquivoIndex/rebalancear.md
-    private void rebalancear(IndexNode pai, int pos, IndexNode filho) throws Exception {
-        if (pos > 0) {
-            IndexNode irmaoEsq = lerNo(pai.getFilho(pos - 1));
+    private void rebalancear(IndexNode pai, long posPai, int posFilhoNoPai, IndexNode filho, long posFilho) throws Exception {
+        if (posFilhoNoPai > 0) {
+            long posIrmaoEsq = pai.getFilho(posFilhoNoPai - 1);
+            IndexNode irmaoEsq = lerNo(posIrmaoEsq);
             if (irmaoEsq.getNumChaves() > ordemArvore / 2) {
-                filho.rotacionarEsquerda(irmaoEsq, pai.getChave(pos - 1));
-                pai.setChave(pos - 1, filho.getChave(0));
-                escreverNo(irmaoEsq);
-                escreverNo(filho);
-                escreverNo(pai);
+                filho.rotacionarEsquerda(irmaoEsq, pai.getChave(posFilhoNoPai - 1));
+                pai.setChave(posFilhoNoPai - 1, filho.getChave(0));
+                escreverNo(irmaoEsq, posIrmaoEsq);
+                escreverNo(filho, posFilho);
+                escreverNo(pai, posPai);
                 return;
             }
         }
         
-        if (pos < pai.getNumChaves()) {
-            IndexNode irmaoDir = lerNo(pai.getFilho(pos + 1));
+        if (posFilhoNoPai < pai.getNumChaves()) {
+            long posIrmaoDir = pai.getFilho(posFilhoNoPai + 1);
+            IndexNode irmaoDir = lerNo(posIrmaoDir);
             if (irmaoDir.getNumChaves() > ordemArvore / 2) {
-                filho.rotacionarDireita(irmaoDir, pai.getChave(pos));
-                pai.setChave(pos, irmaoDir.getChave(0));
-                escreverNo(irmaoDir);
-                escreverNo(filho);
-                escreverNo(pai);
+                filho.rotacionarDireita(irmaoDir, pai.getChave(posFilhoNoPai));
+                pai.setChave(posFilhoNoPai, irmaoDir.getChave(0));
+                escreverNo(irmaoDir, posIrmaoDir);
+                escreverNo(filho, posFilho);
+                escreverNo(pai, posPai);
                 return;
             }
         }
         
-        if (pos > 0) {
-            IndexNode irmaoEsq = lerNo(pai.getFilho(pos - 1));
-            irmaoEsq.mesclar(pai.getChave(pos - 1), filho);
-            pai.removerChave(pos - 1);
-            pai.removerFilho(pos);
-            escreverNo(irmaoEsq);
-            escreverNo(pai);
+        if (posFilhoNoPai > 0) {
+            long posIrmaoEsq = pai.getFilho(posFilhoNoPai - 1);
+            IndexNode irmaoEsq = lerNo(posIrmaoEsq);
+            irmaoEsq.mesclar(pai.getChave(posFilhoNoPai - 1), filho);
+            pai.removerChave(posFilhoNoPai - 1);
+            pai.removerFilho(posFilhoNoPai);
+            escreverNo(irmaoEsq, posIrmaoEsq);
+            escreverNo(pai, posPai);
         } else {
-            IndexNode irmaoDir = lerNo(pai.getFilho(pos + 1));
-            filho.mesclar(pai.getChave(pos), irmaoDir);
-            pai.removerChave(pos);
-            pai.removerFilho(pos + 1);
-            escreverNo(filho);
-            escreverNo(pai);
+            long posIrmaoDir = pai.getFilho(posFilhoNoPai + 1);
+            IndexNode irmaoDir = lerNo(posIrmaoDir);
+            filho.mesclar(pai.getChave(posFilhoNoPai), irmaoDir);
+            pai.removerChave(posFilhoNoPai);
+            pai.removerFilho(posFilhoNoPai + 1);
+            escreverNo(filho, posFilho);
+            escreverNo(pai, posPai);
         }
     }
     

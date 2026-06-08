@@ -136,7 +136,7 @@ public class IndexNode {
     // Explicado em docs/aux/indexNode/encontrarPosicaoChave.md
     public int encontrarPosicaoChave(int chave) {
         int pos = 0;
-        while (pos < numChaves && chave > chaves[pos]) {
+        while (pos < numChaves && chave >= chaves[pos]) {
             pos++;
         }
         return pos;
@@ -151,6 +151,19 @@ public class IndexNode {
     // Explicado em docs/aux/indexNode/inserirChave.md
     public void inserirChave(int chave, long endereco) {
         int pos = encontrarPosicaoChave(chave);
+        if (folha) {
+            // Se já existe a chave, inserimos após (para manter consistência com >=)
+            // encontrarPosicaoChave já retornou a posição correta
+        } else {
+            // Para nós internos, encontrarPosicaoChave com >= pode não ser o ideal para inserção
+            // mas como internal nodes só recebem chaves via dividirFilho, rebalancear etc,
+            // vamos garantir que encontrarPosicaoChave seja usado corretamente para busca.
+            // Para inserção manual (rebalance), vamos recalcular pos com > se necessário.
+            pos = 0;
+            while (pos < numChaves && chave > chaves[pos]) {
+                pos++;
+            }
+        }
         
         // Desloca elementos para a direita
         for (int i = numChaves; i > pos; i--) {
@@ -181,8 +194,10 @@ public class IndexNode {
             }
         }
         numChaves--;
-        chaves[numChaves] = -1;
-        enderecos[numChaves] = -1;
+        if (numChaves >= 0 && numChaves < ordem) {
+            chaves[numChaves] = -1;
+            enderecos[numChaves] = -1;
+        }
     }
     
     /**
@@ -192,7 +207,7 @@ public class IndexNode {
      */
     // Explicado em docs/aux/indexNode/removerFilho.md
     public void removerFilho(int pos) {
-        for (int i = pos; i < numChaves + 1; i++) {
+        for (int i = pos; i < numChaves + 1 && i < ordem; i++) {
             filhos[i] = filhos[i+1];
         }
     }

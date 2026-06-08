@@ -28,6 +28,8 @@
 
 html, body {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -37,6 +39,11 @@ body {
   color: var(--foreground);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Layout for Landing, Login and Register */
+.auth-layout {
   min-height: 100vh;
   display: flex;
   align-items: center;
