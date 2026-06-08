@@ -29,7 +29,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>.</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -48,7 +47,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>App</mainClass>
+                            <mainClass>com.checklist.ui.gui.App</mainClass>
                         </configuration>
                     </execution>
                 </executions>
