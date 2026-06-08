@@ -29,7 +29,8 @@ public class CategoriaController {
             List<Categoria> categorias = categoriaDAO.buscarCategoriasPorUsuario(user.getId());
             return ResponseEntity.ok(categorias);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
     }
 
@@ -43,9 +44,10 @@ public class CategoriaController {
             if (categoriaDAO.incluirCategoria(categoria)) {
                 return ResponseEntity.ok(categoria);
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao criar categoria");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("error", "Erro ao criar categoria"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
     }
 }

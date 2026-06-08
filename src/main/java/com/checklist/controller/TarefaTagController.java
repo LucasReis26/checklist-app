@@ -42,7 +42,8 @@ public class TarefaTagController {
                     
             return ResponseEntity.ok(tagsUser);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
     }
 
@@ -54,15 +55,16 @@ public class TarefaTagController {
         try {
             Tarefa tarefa = tarefaDAO.buscarTarefa(tarefaTag.getIdTarefa());
             if (tarefa == null || tarefa.getIdUser() != user.getId()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Tarefa não pertence ao usuário");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("error", "Tarefa não pertence ao usuário"));
             }
 
             if (tarefaTagDAO.incluirRelacionamento(tarefaTag)) {
                 return ResponseEntity.ok(tarefaTag);
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao associar tag");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("error", "Erro ao associar tag"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
     }
 }

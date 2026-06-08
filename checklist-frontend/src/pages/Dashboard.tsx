@@ -34,18 +34,31 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
 
   const loadData = async () => {
     try {
-      const [catsRes, tagsRes, tasksRes, logsRes, ttagsRes, backupsRes] = await Promise.all([
-        fetch('/api/categorias'),
-        fetch('/api/tags'),
-        fetch('/api/tarefas'),
-        fetch('/api/logs'),
-        fetch('/api/tarefa-tags'),
-        fetch('/api/backup/list')
-      ]);
+      const endpoints = [
+        '/api/categorias',
+        '/api/tags',
+        '/api/tarefas',
+        '/api/logs',
+        '/api/tarefa-tags',
+        '/api/backup/list'
+      ];
 
-      const [cats, tgs, tsks, lgs, ttags, bks] = await Promise.all([
-        catsRes.json(), tagsRes.json(), tasksRes.json(), logsRes.json(), ttagsRes.json(), backupsRes.json()
-      ]);
+      const responses = await Promise.all(endpoints.map(url => fetch(url)));
+      
+      const data = await Promise.all(responses.map(async (res, i) => {
+        if (res.ok) {
+          try {
+            return await res.json();
+          } catch {
+            console.error(`Error parsing JSON from ${endpoints[i]}`);
+            return [];
+          }
+        }
+        console.error(`API Error ${res.status} from ${endpoints[i]}`);
+        return [];
+      }));
+
+      const [cats, tgs, tsks, lgs, ttags, bks] = data;
 
       setCategories(cats || []);
       setTags(tgs || []);
