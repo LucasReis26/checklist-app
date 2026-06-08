@@ -60,12 +60,12 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
 
       const [cats, tgs, tsks, lgs, ttags, bks] = data;
 
-      setCategories(cats || []);
-      setTags(tgs || []);
-      setTasks((tsks || []).map((t: any) => ({ ...t, id: t.id_tarefa || t.id })));
-      setLogs(lgs || []);
-      setTaskTags(ttags || []);
-      setBackups(bks || []);
+      setCategories(Array.isArray(cats) ? cats : []);
+      setTags(Array.isArray(tgs) ? tgs : []);
+      setTasks((Array.isArray(tsks) ? tsks : []).map((t: any) => ({ ...t, id: t.id_tarefa || t.id })));
+      setLogs(Array.isArray(lgs) ? lgs : []);
+      setTaskTags(Array.isArray(ttags) ? ttags : []);
+      setBackups(Array.isArray(bks) ? bks : []);
     } catch (e) {
       console.error('Error loading dashboard data', e);
     }
