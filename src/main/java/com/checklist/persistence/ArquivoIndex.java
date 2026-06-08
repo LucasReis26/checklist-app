@@ -154,43 +154,47 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na leitura
      */
     public List<T> listInOrder() throws Exception {
+        try {
+            return listInOrderInternal();
+        } catch (Exception e) {
+            try {
+                rebuildIndex();
+                return listInOrderInternal();
+            } catch (Exception e2) {
+                return listAll(); // Fallback final
+            }
+        }
+    }
+
+    private List<T> listInOrderInternal() throws Exception {
         List<T> lista = new ArrayList<>();
         if (raizIndice == -1) return lista;
 
-        try {
-            // 1. Encontrar a folha mais à esquerda
-            long posAtual = raizIndice;
-            IndexNode no = lerNo(posAtual);
-            int seguranca = 0;
-            while (!no.isFolha() && seguranca < 50) {
-                posAtual = no.getFilho(0);
-                no = lerNo(posAtual);
-                seguranca++;
-            }
-            if (seguranca >= 50) throw new Exception("CORRUPTED_INDEX");
-
-            // 2. Percorrer o encadeamento de folhas
-            seguranca = 0;
-            while (posAtual != -1 && seguranca < 10000) {
-                for (int i = 0; i < no.getNumChaves(); i++) {
-                    long enderecoDado = no.getEndereco(i);
-                    T registro = readByAddress(enderecoDado);
-                    if (registro != null) {
-                        lista.add(registro);
-                    }
-                }
-                posAtual = no.getFilho(ordemArvore);
-                if (posAtual != -1) no = lerNo(posAtual);
-                seguranca++;
-            }
-        } catch (Exception e) {
-            if ("CORRUPTED_INDEX".equals(e.getMessage())) {
-                rebuildIndex();
-                return listAll(); // Fallback para listAll se falhar ordem
-            }
-            throw e;
+        // 1. Encontrar a folha mais à esquerda
+        long posAtual = raizIndice;
+        IndexNode no = lerNo(posAtual);
+        int seguranca = 0;
+        while (!no.isFolha() && seguranca < 50) {
+            posAtual = no.getFilho(0);
+            no = lerNo(posAtual);
+            seguranca++;
         }
+        if (seguranca >= 50) throw new Exception("CORRUPTED_INDEX");
 
+        // 2. Percorrer o encadeamento de folhas
+        seguranca = 0;
+        while (posAtual != -1 && seguranca < 10000) {
+            for (int i = 0; i < no.getNumChaves(); i++) {
+                long enderecoDado = no.getEndereco(i);
+                T registro = readByAddress(enderecoDado);
+                if (registro != null) {
+                    lista.add(registro);
+                }
+            }
+            posAtual = no.getFilho(ordemArvore);
+            if (posAtual != -1) no = lerNo(posAtual);
+            seguranca++;
+        }
         return lista;
     }
 
@@ -444,58 +448,65 @@ public class ArquivoIndex<T extends Registro> {
         try {
             endereco = buscarIndice(id);
         } catch (Exception e) {
-            if ("CORRUPTED_INDEX".equals(e.getMessage())) {
+            try {
                 rebuildIndex();
                 endereco = buscarIndice(id);
-            } else {
-                throw e;
+            } catch (Exception e2) {
+                endereco = -1;
             }
         }
         
         if (endereco == -1) {
-            // Busca sequencial como fallback
-            arquivoDados.seek(TAM_CABECALHO_DADOS);
-            
-            while (arquivoDados.getFilePointer() < arquivoDados.length()) {
-                long posAtual = arquivoDados.getFilePointer();
-                byte lapide = arquivoDados.readByte();
-                short tamanho = arquivoDados.readShort();
-                
-                if (tamanho <= 0 || arquivoDados.getFilePointer() + tamanho > arquivoDados.length()) {
-                    break;
-                }
-                
-                byte[] dados = new byte[tamanho];
-                arquivoDados.read(dados);
-                
-                if (lapide == ' ') {
-                    T obj = construtor.newInstance();
-                    obj.fromByteArray(dados);
-                    if (obj.getId() == id) {
-                        // Corrigir o índice com o endereço correto
-                        inserirIndice(id, posAtual);
-                        return obj;
+            try {
+                arquivoDados.seek(TAM_CABECALHO_DADOS);
+                while (arquivoDados.getFilePointer() < arquivoDados.length()) {
+                    long posAtual = arquivoDados.getFilePointer();
+                    byte lapide = arquivoDados.readByte();
+                    short tamanho = arquivoDados.readShort();
+                    
+                    if (tamanho <= 0 || posAtual + 3 + tamanho > arquivoDados.length()) {
+                        break;
+                    }
+                    
+                    byte[] dados = new byte[tamanho];
+                    arquivoDados.read(dados);
+                    
+                    if (lapide == ' ') {
+                        try {
+                            T obj = construtor.newInstance();
+                            obj.fromByteArray(dados);
+                            if (obj.getId() == id) {
+                                inserirIndice(id, posAtual);
+                                return obj;
+                            }
+                        } catch (Exception e) {
+                            // Registro inválido, continua busca
+                        }
                     }
                 }
+            } catch (Exception e) {
+                // Erro na busca sequencial, retorna null
             }
             return null;
         }
         
-        arquivoDados.seek(endereco);
-        byte lapide = arquivoDados.readByte();
-        if (lapide != ' ') {
+        try {
+            arquivoDados.seek(endereco);
+            byte lapide = arquivoDados.readByte();
+            if (lapide != ' ') return null;
+            
+            short tamanho = arquivoDados.readShort();
+            if (tamanho <= 0 || endereco + 3 + tamanho > arquivoDados.length()) return null;
+            
+            byte[] dados = new byte[tamanho];
+            arquivoDados.read(dados);
+            
+            T obj = construtor.newInstance();
+            obj.fromByteArray(dados);
+            return obj;
+        } catch (Exception e) {
             return null;
         }
-        
-        short tamanho = arquivoDados.readShort();
-        if (tamanho <= 0 || endereco + 3 + tamanho > arquivoDados.length()) return null;
-        byte[] dados = new byte[tamanho];
-        arquivoDados.read(dados);
-        
-        T obj = construtor.newInstance();
-        obj.fromByteArray(dados);
-        
-        return obj;
     }
     
     /**
@@ -743,37 +754,44 @@ public class ArquivoIndex<T extends Registro> {
         return no;
     }
     
-    /**
-     * Reconstrói o arquivo de índice do zero a partir do arquivo de dados.
-     * 
-     * @throws Exception Se houver erro na reconstrução
-     */
     public void rebuildIndex() throws Exception {
-        // Resetar arquivo de índice
-        arquivoIndice.setLength(0);
-        arquivoIndice.writeInt(ordemArvore);
-        arquivoIndice.writeLong(-1);
-        raizIndice = -1;
+        try {
+            // Resetar arquivo de índice
+            arquivoIndice.setLength(0);
+            arquivoIndice.writeInt(ordemArvore);
+            arquivoIndice.writeLong(-1);
+            raizIndice = -1;
 
-        // Ler todos os registros do arquivo de dados e reinserir no índice
-        arquivoDados.seek(TAM_CABECALHO_DADOS);
-        while (arquivoDados.getFilePointer() < arquivoDados.length()) {
-            long posAtual = arquivoDados.getFilePointer();
-            byte lapide = arquivoDados.readByte();
-            short tamanho = arquivoDados.readShort();
-            
-            if (tamanho <= 0 || arquivoDados.getFilePointer() + tamanho > arquivoDados.length()) {
-                break;
+            // Ler todos os registros do arquivo de dados e reinserir no índice
+            arquivoDados.seek(TAM_CABECALHO_DADOS);
+            while (arquivoDados.getFilePointer() < arquivoDados.length()) {
+                long posAtual = arquivoDados.getFilePointer();
+                byte lapide = arquivoDados.readByte();
+                short tamanho = arquivoDados.readShort();
+                
+                if (tamanho <= 0 || arquivoDados.getFilePointer() + tamanho > arquivoDados.length()) {
+                    break;
+                }
+                
+                byte[] dados = new byte[tamanho];
+                arquivoDados.read(dados);
+                
+                if (lapide == ' ') {
+                    try {
+                        T obj = construtor.newInstance();
+                        obj.fromByteArray(dados);
+                        inserirIndice(obj.getId(), posAtual);
+                    } catch (Exception e) {
+                        // Ignora registros corrompidos durante reconstrução
+                    }
+                }
             }
-            
-            byte[] dados = new byte[tamanho];
-            arquivoDados.read(dados);
-            
-            if (lapide == ' ') {
-                T obj = construtor.newInstance();
-                obj.fromByteArray(dados);
-                inserirIndice(obj.getId(), posAtual);
-            }
+        } catch (Exception e) {
+            // Se falhar a reconstrução, garantimos que o índice reflita que está vazio/inválido
+            arquivoIndice.setLength(0);
+            arquivoIndice.writeInt(ordemArvore);
+            arquivoIndice.writeLong(-1);
+            raizIndice = -1;
         }
     }
     
@@ -798,29 +816,33 @@ public class ArquivoIndex<T extends Registro> {
     // Explicado em docs/aux/arquivoIndex/listAll.md
     public List<T> listAll() throws Exception {
         List<T> lista = new ArrayList<>();
-        arquivoDados.seek(TAM_CABECALHO_DADOS);
-        
-        while (arquivoDados.getFilePointer() < arquivoDados.length()) {
-            long posAtual = arquivoDados.getFilePointer();
-            byte lapide = arquivoDados.readByte();
-            short tamanho = arquivoDados.readShort();
+        try {
+            arquivoDados.seek(TAM_CABECALHO_DADOS);
             
-            if (tamanho <= 0 || arquivoDados.getFilePointer() + tamanho > arquivoDados.length()) {
-                break;
-            }
-            
-            byte[] dados = new byte[tamanho];
-            arquivoDados.read(dados);
-            
-            if (lapide == ' ') {
-                try {
-                    T obj = construtor.newInstance();
-                    obj.fromByteArray(dados);
-                    lista.add(obj);
-                } catch (Exception e) {
-                    // Ignora registros corrompidos no listAll
+            while (arquivoDados.getFilePointer() < arquivoDados.length()) {
+                long posAtual = arquivoDados.getFilePointer();
+                byte lapide = arquivoDados.readByte();
+                short tamanho = arquivoDados.readShort();
+                
+                if (tamanho <= 0 || arquivoDados.getFilePointer() + tamanho > arquivoDados.length()) {
+                    break;
+                }
+                
+                byte[] dados = new byte[tamanho];
+                arquivoDados.read(dados);
+                
+                if (lapide == ' ') {
+                    try {
+                        T obj = construtor.newInstance();
+                        obj.fromByteArray(dados);
+                        lista.add(obj);
+                    } catch (Exception e) {
+                        // Ignora registros corrompidos no listAll
+                    }
                 }
             }
+        } catch (Exception e) {
+            // Em caso de erro grave no arquivo de dados, retornamos o que conseguimos ler
         }
         
         return lista;

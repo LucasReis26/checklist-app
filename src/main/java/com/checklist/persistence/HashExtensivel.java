@@ -164,20 +164,25 @@ public class HashExtensivel<T extends Registro> {
         }
     }
     
-    public T buscar(int chave) throws Exception {
-        int indice = hash(chave) % (1 << profundidadeGlobal);
-        long posBucket = lerPosicaoDiretorio(indice);
-        Bucket bucket = lerBucket(posBucket);
-        
-        long endereco = bucket.buscar(chave);
-        if (endereco != -1) {
-            arquivo.seek(endereco);
-            int tam = arquivo.readInt();
-            byte[] dados = new byte[tam];
-            arquivo.read(dados);
-            T obj = construtor.newInstance();
-            obj.fromByteArray(dados);
-            return obj;
+    public T buscar(int chave) {
+        try {
+            int indice = hash(chave) % (1 << profundidadeGlobal);
+            long posBucket = lerPosicaoDiretorio(indice);
+            Bucket bucket = lerBucket(posBucket);
+            
+            long endereco = bucket.buscar(chave);
+            if (endereco != -1) {
+                arquivo.seek(endereco);
+                int tam = arquivo.readInt();
+                if (tam <= 0 || endereco + 4 + tam > arquivo.length()) return null;
+                byte[] dados = new byte[tam];
+                arquivo.read(dados);
+                T obj = construtor.newInstance();
+                obj.fromByteArray(dados);
+                return obj;
+            }
+        } catch (Exception e) {
+            // Em caso de erro no índice hash, retorna null para não quebrar a API
         }
         return null;
     }
