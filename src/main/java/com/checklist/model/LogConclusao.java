@@ -1,6 +1,7 @@
 package com.checklist.model;
 
 import com.checklist.persistence.Registro;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 
 /**
@@ -10,9 +11,13 @@ import java.io.*;
  */
 public class LogConclusao implements Registro {
     // Explicado em docs/aux/logConclusao/logConclusao.md
+    @JsonProperty("id_log")
     private int id_log;
+    @JsonProperty("id_tarefa")
     private int id_tarefa;      // Chave estrangeira para Tarefa
+    @JsonProperty("data_conclusao")
     private String data_conclusao;
+    @JsonProperty("resumo_tags")
     private String resumo_tags;
 
     /**

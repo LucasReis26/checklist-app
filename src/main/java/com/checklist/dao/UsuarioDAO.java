@@ -159,6 +159,23 @@ public class UsuarioDAO {
     }
     
     /**
+     * Busca um usuário pelo email.
+     * 
+     * @param email Email do usuário
+     * @return Objeto Usuario encontrado ou null
+     * @throws Exception Se houver erro na busca
+     */
+    public Usuario buscarUsuarioPorEmail(String email) throws Exception {
+        List<Usuario> todos = arqUsuarios.listAll();
+        for (Usuario u : todos) {
+            if (u.getEmail().equalsIgnoreCase(email)) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Fecha as conexões com os arquivos e gerenciadores.
      * 
      * @throws Exception Se houver erro no fechamento

@@ -1,6 +1,7 @@
 package com.checklist.model;
 
 import com.checklist.persistence.Registro;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 
 /**
@@ -10,7 +11,9 @@ import java.io.*;
  */
 public class Categoria implements Registro {
     // Explicado em docs/aux/categoria/categoria.md
+    @JsonProperty("id_categoria")
     private int id_categoria;
+    @JsonProperty("id_user")
     private int id_user;  // Chave estrangeira para Usuario
     private String nome;
 

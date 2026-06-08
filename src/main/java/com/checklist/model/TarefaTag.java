@@ -1,6 +1,7 @@
 package com.checklist.model;
 
 import com.checklist.persistence.Registro;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 
 /**
@@ -12,7 +13,9 @@ import java.io.*;
  */
 public class TarefaTag implements Registro {
     // Explicado em docs/aux/tarefaTag/tarefaTag.md
+    @JsonProperty("id_tag")
     private int id_tag;      // Chave estrangeira para Tag
+    @JsonProperty("id_tarefa")
     private int id_tarefa;   // Chave estrangeira para Tarefa
 
     /**

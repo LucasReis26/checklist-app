@@ -1,6 +1,7 @@
 package com.checklist.model;
 
 import com.checklist.persistence.Registro;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 
 /**
@@ -9,6 +10,7 @@ import java.io.*;
  */
 public class Usuario implements Registro {
     // Explicado em docs/aux/usuario/usuario.md
+    @JsonProperty("id_user")
     private int id_user;
     private String nome;
     private String email;
