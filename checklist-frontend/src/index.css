@@ -541,6 +541,7 @@ body {
   background: var(--muted);
   border-radius: 999px;
   padding: 2px 4px 2px 0;
+  border: none;
   transition: var(--transition);
 }
 .tag-chip--active { background: rgba(91, 91, 240, 0.15); color: var(--primary); }
@@ -859,13 +860,13 @@ body {
   border-radius: 999px;
   font-size: 0.8125rem;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   transition: var(--transition);
 }
 .tag-pick:hover { border-color: var(--primary); }
 .tag-pick input { accent-color: var(--primary); }
 .tag-pick:has(input:checked) {
   background: rgba(91, 91, 240, 0.12);
-  border-color: var(--primary);
+  border-color: rgba(91, 91, 240, 0.3);
   color: var(--primary);
 }
