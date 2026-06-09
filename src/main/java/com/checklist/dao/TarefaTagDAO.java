@@ -25,17 +25,21 @@ public class TarefaTagDAO {
     private final HashIndexTarefaTags indexTarefaTags;
     private final HashIndexTagTarefas indexTagTarefas;
 
+    public TarefaTagDAO() throws Exception {
+        this(new HashIndexTarefaTags(), new HashIndexTagTarefas());
+    }
+
     /**
      * Construtor da classe TarefaTagDAO.
-     * Inicializa o arquivo com índice para os relacionamentos e os índices Hash.
      * 
+     * @param itags Índice Hash Tarefa -> Tags
+     * @param itarefas Índice Hash Tag -> Tarefas
      * @throws Exception Se houver erro na inicialização
      */
-    // Explicado em docs/aux/tarefaTagDAO/construtor.md
-    public TarefaTagDAO() throws Exception {
-        arqTarefaTags = new ArquivoIndex<>("tarefa_tags", TarefaTag.class.getConstructor());
-        indexTarefaTags = new HashIndexTarefaTags();
-        indexTagTarefas = new HashIndexTagTarefas();
+    public TarefaTagDAO(HashIndexTarefaTags itags, HashIndexTagTarefas itarefas) throws Exception {
+        arqTarefaTags = ArquivoIndex.getInstance("tarefa_tags", TarefaTag.class.getConstructor());
+        this.indexTarefaTags = itags;
+        this.indexTagTarefas = itarefas;
     }
 
     /**
@@ -45,7 +49,7 @@ public class TarefaTagDAO {
      * @return Lista de objetos TarefaTag da tarefa
      * @throws Exception Se houver erro na busca
      */
-    public List<TarefaTag> buscarTagsPorTarefa(int idTarefa) throws Exception {
+    public synchronized List<TarefaTag> buscarTagsPorTarefa(int idTarefa) throws Exception {
         List<TarefaTag> resultado = new ArrayList<>();
         List<Integer> idsTags = indexTarefaTags.buscar(idTarefa);
         
@@ -63,7 +67,7 @@ public class TarefaTagDAO {
      * @return Lista de objetos TarefaTag da tag
      * @throws Exception Se houver erro na busca
      */
-    public List<TarefaTag> buscarTarefasPorTag(int idTag) throws Exception {
+    public synchronized List<TarefaTag> buscarTarefasPorTag(int idTag) throws Exception {
         List<TarefaTag> resultado = new ArrayList<>();
         List<Integer> idsTarefas = indexTagTarefas.buscar(idTag);
         
@@ -82,7 +86,7 @@ public class TarefaTagDAO {
      * @return true se incluído com sucesso
      * @throws Exception Se o relacionamento já existir
      */
-    public boolean incluirRelacionamento(TarefaTag relacionamento) throws Exception {
+    public synchronized boolean incluirRelacionamento(TarefaTag relacionamento) throws Exception {
         List<Integer> tagsAtuais = indexTarefaTags.buscar(relacionamento.getIdTarefa());
         if (tagsAtuais.contains(relacionamento.getIdTag())) {
             throw new Exception("Relacionamento já existe!");
@@ -112,7 +116,7 @@ public class TarefaTagDAO {
      * @return true se removido com sucesso
      * @throws Exception Se houver erro na remoção
      */
-    public boolean excluirRelacionamento(int idTag, int idTarefa) throws Exception {
+    public synchronized boolean excluirRelacionamento(int idTag, int idTarefa) throws Exception {
         int idComposto = idTarefa * 1000000 + idTag;
         if (arqTarefaTags.delete(idComposto)) {
             // Atualiza índice Tarefa -> Tags
@@ -145,7 +149,7 @@ public class TarefaTagDAO {
      * @return true se todas as associações foram removidas
      * @throws Exception Se houver erro na remoção
      */
-    public boolean excluirTagsPorTarefa(int idTarefa) throws Exception {
+    public synchronized boolean excluirTagsPorTarefa(int idTarefa) throws Exception {
         List<Integer> tags = indexTarefaTags.buscar(idTarefa);
         for (Integer idTag : tags) {
             excluirRelacionamento(idTag, idTarefa);
@@ -157,10 +161,13 @@ public class TarefaTagDAO {
      * Lista todos os relacionamentos tarefa-tag cadastrados.
      * 
      * @return Lista com todos os relacionamentos
-     * @throws Exception Se houver erro na listagem
      */
-    public List<TarefaTag> listarTodos() throws Exception {
-        return arqTarefaTags.listAll();
+    public synchronized List<TarefaTag> listarTodos() {
+        try {
+            return arqTarefaTags.listAll();
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
     
     /**
@@ -168,7 +175,7 @@ public class TarefaTagDAO {
      * 
      * @throws Exception Se houver erro no fechamento
      */
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         arqTarefaTags.close();
         indexTarefaTags.close();
         indexTagTarefas.close();

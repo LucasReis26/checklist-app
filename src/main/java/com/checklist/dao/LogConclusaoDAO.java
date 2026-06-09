@@ -15,16 +15,19 @@ public class LogConclusaoDAO {
     private final ArquivoIndex<LogConclusao> arqLogs;
     private final TarefaDAO tarefaDAO;
 
+    public LogConclusaoDAO() throws Exception {
+        this(new TarefaDAO());
+    }
+
     /**
      * Construtor da classe LogConclusaoDAO.
-     * Inicializa o arquivo com índice e o DAO de tarefas.
      * 
+     * @param tdao DAO de tarefas
      * @throws Exception Se houver erro na inicialização
      */
-    // Explicado em docs/aux/logConclusaoDAO/construtor.md
-    public LogConclusaoDAO() throws Exception {
-        arqLogs = new ArquivoIndex<>("logs_conclusao", LogConclusao.class.getConstructor());
-        tarefaDAO = new TarefaDAO();
+    public LogConclusaoDAO(TarefaDAO tdao) throws Exception {
+        arqLogs = ArquivoIndex.getInstance("logs_conclusao", LogConclusao.class.getConstructor());
+        this.tarefaDAO = tdao;
     }
 
     /**
@@ -35,7 +38,7 @@ public class LogConclusaoDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/logConclusaoDAO/buscarLog.md
-    public LogConclusao buscarLog(int id) throws Exception {
+    public synchronized LogConclusao buscarLog(int id) throws Exception {
         return arqLogs.read(id);
     }
     
@@ -70,7 +73,7 @@ public class LogConclusaoDAO {
      * @throws Exception Se a tarefa não existir ou não estiver concluída
      */
     // Explicado em docs/aux/logConclusaoDAO/incluirLog.md
-    public boolean incluirLog(LogConclusao log) throws Exception {
+    public synchronized boolean incluirLog(LogConclusao log) throws Exception {
         // Validação de integridade referencial: tarefa deve existir
         Tarefa tarefa = tarefaDAO.buscarTarefa(log.getIdTarefa());
         if (tarefa == null) {
@@ -94,7 +97,7 @@ public class LogConclusaoDAO {
      * @throws Exception Se houver erro na alteração
      */
     // Explicado em docs/aux/logConclusaoDAO/alterarLog.md
-    public boolean alterarLog(LogConclusao log) throws Exception {
+    public synchronized boolean alterarLog(LogConclusao log) throws Exception {
         LogConclusao existente = buscarLog(log.getId());
         if (existente != null && existente.getIdTarefa() != log.getIdTarefa()) {
             Tarefa tarefa = tarefaDAO.buscarTarefa(log.getIdTarefa());
@@ -116,19 +119,21 @@ public class LogConclusaoDAO {
      * @throws Exception Se houver erro na exclusão
      */
     // Explicado em docs/aux/logConclusaoDAO/excluirLog.md
-    public boolean excluirLog(int id) throws Exception {
+    public synchronized boolean excluirLog(int id) throws Exception {
         return arqLogs.delete(id);
     }
     
     /**
-     * Lista todos os logs cadastrados.
+     * Lista todos os logs de conclusão cadastrados.
      * 
      * @return Lista com todos os logs
-     * @throws Exception Se houver erro na listagem
      */
-    // Explicado em docs/aux/logConclusaoDAO/listarTodos.md
-    public List<LogConclusao> listarTodos() throws Exception {
-        return arqLogs.listAll();
+    public synchronized List<LogConclusao> listarTodos() {
+        try {
+            return arqLogs.listAll();
+        } catch (Exception e) {
+            return new java.util.ArrayList<>();
+        }
     }
     
     /**
@@ -137,7 +142,7 @@ public class LogConclusaoDAO {
      * @throws Exception Se houver erro no fechamento
      */
     // Explicado em docs/aux/logConclusaoDAO/close.md
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         arqLogs.close();
     }
 }

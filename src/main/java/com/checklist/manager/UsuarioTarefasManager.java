@@ -26,7 +26,7 @@ public class UsuarioTarefasManager {
      */
     // Explicado em docs/aux/usuarioTarefasManager/construtor.md
     public UsuarioTarefasManager() throws Exception {
-        arquivoRelacoes = new ArquivoIndex<>("usuario_tarefas_rel", 
+        arquivoRelacoes = ArquivoIndex.getInstance("usuario_tarefas_rel", 
                                               RegistroListaTarefas.class.getConstructor());
     }
     

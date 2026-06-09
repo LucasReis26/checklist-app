@@ -28,34 +28,42 @@ public class TarefaDAO {
     private final UsuarioTarefasManager usuarioTarefasManager;
     private final CategoriaTarefasManager categoriaTarefasManager;
     private final TarefaLogsManager tarefaLogsManager;
-    private TarefaTagDAO tarefaTagDAO;  // Inicializado sob demanda para evitar recursão
+    private TarefaTagDAO tarefaTagDAO;
+    private LogConclusaoDAO logConclusaoDAO;
 
-    /**
-     * Construtor da classe TarefaDAO.
-     * Inicializa o arquivo com índice e os gerenciadores de relacionamento.
-     * 
-     * @throws Exception Se houver erro na inicialização
-     */
-    // Explicado em docs/aux/tarefaDAO/construtor.md
     public TarefaDAO() throws Exception {
-        arqTarefas = new ArquivoIndex<>("tarefas", Tarefa.class.getConstructor());
-        usuarioDAO = new UsuarioDAO();
-        categoriaDAO = new CategoriaDAO();
-        usuarioTarefasManager = new UsuarioTarefasManager();
-        categoriaTarefasManager = new CategoriaTarefasManager();
-        tarefaLogsManager = new TarefaLogsManager();
-        // NÃO instanciar TarefaTagDAO aqui - será instanciado quando necessário
+        this(new UsuarioDAO(), new CategoriaDAO(), new UsuarioTarefasManager(), 
+             new CategoriaTarefasManager(), new TarefaLogsManager());
+    }
+
+    public TarefaDAO(UsuarioDAO udao, CategoriaDAO cdao, UsuarioTarefasManager utm, 
+                    CategoriaTarefasManager ctm, TarefaLogsManager tlm) throws Exception {
+        arqTarefas = ArquivoIndex.getInstance("tarefas", Tarefa.class.getConstructor());
+        this.usuarioDAO = udao;
+        this.categoriaDAO = cdao;
+        this.usuarioTarefasManager = utm;
+        this.categoriaTarefasManager = ctm;
+        this.tarefaLogsManager = tlm;
+    }
+
+    public void setTarefaTagDAO(TarefaTagDAO ttdao) {
+        this.tarefaTagDAO = ttdao;
     }
     
+    public void setLogConclusaoDAO(LogConclusaoDAO lcdao) {
+        this.logConclusaoDAO = lcdao;
+    }
+
     /**
-     * Obtém a instância do TarefaTagDAO (lazy initialization).
+     * Obtém a instância do TarefaTagDAO.
      * 
      * @return Instância do TarefaTagDAO
-     * @throws Exception Se houver erro na criação
+     * @throws Exception Se não estiver injetado
      */
     // Explicado em docs/aux/tarefaDAO/getTarefaTagDAO.md
-    private TarefaTagDAO getTarefaTagDAO() throws Exception {
+    private synchronized TarefaTagDAO getTarefaTagDAO() throws Exception {
         if (tarefaTagDAO == null) {
+            // Lazy-wire se estiver em ambiente não-Spring (CLI/GUI)
             tarefaTagDAO = new TarefaTagDAO();
         }
         return tarefaTagDAO;
@@ -69,7 +77,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tarefaDAO/buscarTarefa.md
-    public Tarefa buscarTarefa(int id) throws Exception {
+    public synchronized Tarefa buscarTarefa(int id) throws Exception {
         return arqTarefas.read(id);
     }
 
@@ -82,18 +90,59 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tarefaDAO/buscarTarefasPorUsuario.md
-    public List<Tarefa> buscarTarefasPorUsuario(int idUser) throws Exception {
-        List<Tarefa> resultado = new ArrayList<>();
-        List<Integer> idsTarefas = usuarioTarefasManager.buscarTarefasDoUsuario(idUser);
-        
-        for (Integer id : idsTarefas) {
-            Tarefa tarefa = buscarTarefa(id);
-            if (tarefa != null) {
-                resultado.add(tarefa);
+    public synchronized List<Tarefa> buscarTarefasPorUsuario(int idUser) {
+        try {
+            System.out.println("DEBUG: [TarefaDAO] Iniciando busca para usuário " + idUser);
+            List<Integer> idsTarefas = usuarioTarefasManager.buscarTarefasDoUsuario(idUser);
+            System.out.println("DEBUG: [TarefaDAO] IDs no índice de relações: " + idsTarefas);
+            
+            // Forçar scan físico se o índice estiver vazio
+            if (idsTarefas.isEmpty()) {
+                System.out.println("DEBUG: [TarefaDAO] Índice vazio! Iniciando scan físico de tarefas.db...");
+                List<Tarefa> todas = listarTodas();
+                System.out.println("DEBUG: [TarefaDAO] Total de tarefas físicas lidas: " + todas.size());
+                
+                for (Tarefa t : todas) {
+                    System.out.println("  -> Analisando Tarefa ID: " + t.getId() + " | Dono no DB: " + t.getIdUser());
+                    if (t.getIdUser() == idUser) {
+                        System.out.println("  [!] Encontrada! Tentando re-vincular tarefa " + t.getId() + " ao usuário " + idUser);
+                        try {
+                            usuarioTarefasManager.adicionarTarefa(idUser, t.getId());
+                        } catch (Exception e) { 
+                            System.err.println("  [X] Falha ao re-vincular tarefa " + t.getId() + ": " + e.toString());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                // Recarrega após a tentativa de cura
+                idsTarefas = usuarioTarefasManager.buscarTarefasDoUsuario(idUser);
+                System.out.println("DEBUG: [TarefaDAO] IDs após tentativa de cura: " + idsTarefas);
+            }
+            
+            List<Tarefa> resultado = new ArrayList<>();
+            for (Integer id : idsTarefas) {
+                try {
+                    Tarefa tarefa = buscarTarefa(id);
+                    if (tarefa != null) {
+                        resultado.add(tarefa);
+                    }
+                } catch (Exception e) { }
+            }
+            return resultado;
+        } catch (Exception e) {
+            System.err.println("DEBUG: [TarefaDAO] Erro grave: " + e.getMessage());
+            // Fallback total
+            try {
+                List<Tarefa> todas = listarTodas();
+                List<Tarefa> filtradas = new ArrayList<>();
+                for (Tarefa t : todas) {
+                    if (t.getIdUser() == idUser) filtradas.add(t);
+                }
+                return filtradas;
+            } catch (Exception e2) {
+                return new ArrayList<>();
             }
         }
-        
-        return resultado;
     }
 
     /**
@@ -102,21 +151,25 @@ public class TarefaDAO {
      * 
      * @param idCategoria Identificador da categoria
      * @return Lista de tarefas da categoria
-     * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tarefaDAO/buscarTarefasPorCategoria.md
-    public List<Tarefa> buscarTarefasPorCategoria(int idCategoria) throws Exception {
-        List<Tarefa> resultado = new ArrayList<>();
-        List<Integer> idsTarefas = categoriaTarefasManager.buscarTarefasDaCategoria(idCategoria);
-        
-        for (Integer id : idsTarefas) {
-            Tarefa tarefa = buscarTarefa(id);
-            if (tarefa != null) {
-                resultado.add(tarefa);
+    public synchronized List<Tarefa> buscarTarefasPorCategoria(int idCategoria) {
+        try {
+            List<Tarefa> resultado = new ArrayList<>();
+            List<Integer> idsTarefas = categoriaTarefasManager.buscarTarefasDaCategoria(idCategoria);
+            
+            for (Integer id : idsTarefas) {
+                try {
+                    Tarefa tarefa = buscarTarefa(id);
+                    if (tarefa != null) {
+                        resultado.add(tarefa);
+                    }
+                } catch (Exception e) { }
             }
+            return resultado;
+        } catch (Exception e) {
+            return new ArrayList<>();
         }
-        
-        return resultado;
     }
 
     /**
@@ -128,7 +181,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tarefaDAO/buscarTarefasPorStatus.md
-    public List<Tarefa> buscarTarefasPorStatus(String status) throws Exception {
+    public synchronized List<Tarefa> buscarTarefasPorStatus(String status) throws Exception {
         List<Tarefa> resultado = new ArrayList<>();
         List<Tarefa> todas = listarTodas();
         
@@ -150,7 +203,7 @@ public class TarefaDAO {
      * @throws Exception Se usuário ou categoria não existirem
      */
     // Explicado em docs/aux/tarefaDAO/incluirTarefa.md
-    public boolean incluirTarefa(Tarefa tarefa) throws Exception {
+    public synchronized boolean incluirTarefa(Tarefa tarefa) throws Exception {
         // Validação de integridade referencial: usuário deve existir
         Usuario usuario = usuarioDAO.buscarUsuario(tarefa.getIdUser());
         if (usuario == null) {
@@ -191,7 +244,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na alteração
      */
     // Explicado em docs/aux/tarefaDAO/alterarTarefa.md
-    public boolean alterarTarefa(Tarefa tarefa) throws Exception {
+    public synchronized boolean alterarTarefa(Tarefa tarefa) throws Exception {
         Tarefa existente = buscarTarefa(tarefa.getId());
         if (existente == null) {
             throw new Exception("Tarefa não encontrada!");
@@ -237,20 +290,20 @@ public class TarefaDAO {
      * @throws Exception Se houver logs ou tags associados
      */
     // Explicado em docs/aux/tarefaDAO/excluirTarefa.md
-    public boolean excluirTarefa(int id) throws Exception {
+    public synchronized boolean excluirTarefa(int id) throws Exception {
         Tarefa tarefa = buscarTarefa(id);
         if (tarefa == null) {
             return false;
         }
         
         // Remover logs associados automaticamente
-        List<Integer> logs = tarefaLogsManager.buscarLogsDaTarefa(id);
-        LogConclusaoDAO logDAO = new LogConclusaoDAO();
-        for (Integer idLog : logs) {
-            logDAO.excluirLog(idLog);
+        if (logConclusaoDAO != null) {
+            List<Integer> logs = tarefaLogsManager.buscarLogsDaTarefa(id);
+            for (Integer idLog : logs) {
+                logConclusaoDAO.excluirLog(idLog);
+            }
         }
         tarefaLogsManager.removerLogsDaTarefa(id);
-        logDAO.close();
         
         // Remover tags associadas automaticamente
         getTarefaTagDAO().excluirTagsPorTarefa(id);
@@ -274,7 +327,7 @@ public class TarefaDAO {
      * @throws Exception Se a tarefa não existir ou já estiver concluída
      */
     // Explicado em docs/aux/tarefaDAO/concluirTarefa.md
-    public boolean concluirTarefa(int id, String resumoTags) throws Exception {
+    public synchronized boolean concluirTarefa(int id, String resumoTags) throws Exception {
         Tarefa tarefa = buscarTarefa(id);
         if (tarefa == null) {
             throw new Exception("Tarefa não encontrada!");
@@ -295,14 +348,14 @@ public class TarefaDAO {
             resumoTags
         );
         
-        LogConclusaoDAO logDAO = new LogConclusaoDAO();
-        boolean logIncluido = logDAO.incluirLog(log);
-        
-        if (logIncluido) {
-            tarefaLogsManager.adicionarLog(id, log.getId());
+        if (logConclusaoDAO != null) {
+            boolean logIncluido = logConclusaoDAO.incluirLog(log);
+            if (logIncluido) {
+                tarefaLogsManager.adicionarLog(id, log.getId());
+            }
         }
         
-        return logIncluido;
+        return true;
     }
     
     /**
@@ -312,9 +365,12 @@ public class TarefaDAO {
      * @return Último log de conclusão ou null
      * @throws Exception Se houver erro na busca
      */
-    // Explicado em docs/aux/tarefaDAO/buscarUltimoLogDaTarefa.md
-    public LogConclusao buscarUltimoLogDaTarefa(int idTarefa) throws Exception {
-        return tarefaLogsManager.buscarUltimoLog(idTarefa);
+    public synchronized LogConclusao buscarUltimoLogDaTarefa(int idTarefa) throws Exception {
+        int idLog = tarefaLogsManager.buscarUltimoLogId(idTarefa);
+        if (idLog != -1 && logConclusaoDAO != null) {
+            return logConclusaoDAO.buscarLog(idLog);
+        }
+        return null;
     }
     
     /**
@@ -325,7 +381,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tarefaDAO/getLogsDaTarefa.md
-    public List<Integer> getLogsDaTarefa(int idTarefa) throws Exception {
+    public synchronized List<Integer> getLogsDaTarefa(int idTarefa) throws Exception {
         return tarefaLogsManager.buscarLogsDaTarefa(idTarefa);
     }
     
@@ -336,7 +392,7 @@ public class TarefaDAO {
      * @return Lista de tarefas ordenadas
      * @throws Exception Se houver erro na listagem
      */
-    public List<Tarefa> listarOrdenado() throws Exception {
+    public synchronized List<Tarefa> listarOrdenado() throws Exception {
         return arqTarefas.listInOrder();
     }
     
@@ -347,7 +403,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro na listagem
      */
     // Explicado em docs/aux/tarefaDAO/listarTodas.md
-    public List<Tarefa> listarTodas() throws Exception {
+    public synchronized List<Tarefa> listarTodas() throws Exception {
         return arqTarefas.listAll();
     }
     
@@ -357,7 +413,7 @@ public class TarefaDAO {
      * @throws Exception Se houver erro no fechamento
      */
     // Explicado em docs/aux/tarefaDAO/close.md
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         arqTarefas.close();
         usuarioTarefasManager.close();
         categoriaTarefasManager.close();

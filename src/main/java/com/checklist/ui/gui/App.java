@@ -36,12 +36,27 @@ public class App extends Application {
 
     @Override
     public void init() throws Exception {
-        usuarioDAO = new UsuarioDAO();
-        tarefaDAO = new TarefaDAO();
-        categoriaDAO = new CategoriaDAO();
+        com.checklist.manager.UsuarioTarefasManager utm = new com.checklist.manager.UsuarioTarefasManager();
+        com.checklist.manager.UsuarioCategoriasManager ucm = new com.checklist.manager.UsuarioCategoriasManager();
+        com.checklist.manager.CategoriaTarefasManager ctm = new com.checklist.manager.CategoriaTarefasManager();
+        com.checklist.manager.TarefaLogsManager tlm = new com.checklist.manager.TarefaLogsManager();
+
+        usuarioDAO = new UsuarioDAO(utm, ucm);
+        categoriaDAO = new CategoriaDAO(usuarioDAO, ctm);
+        tarefaDAO = new TarefaDAO(usuarioDAO, categoriaDAO, utm, ctm, tlm);
+
+        com.checklist.persistence.HashIndexTarefaTags hitags = new com.checklist.persistence.HashIndexTarefaTags();
+        com.checklist.persistence.HashIndexTagTarefas hitarefas = new com.checklist.persistence.HashIndexTagTarefas();
+        tarefaTagDAO = new TarefaTagDAO(hitags, hitarefas);
+
+        logDAO = new LogConclusaoDAO(tarefaDAO);
         tagDAO = new TagDAO();
-        logDAO = new LogConclusaoDAO();
-        tarefaTagDAO = new TarefaTagDAO();
+
+        // Finaliza fiação de dependências circulares
+        categoriaDAO.setTarefaDAO(tarefaDAO);
+        tarefaDAO.setTarefaTagDAO(tarefaTagDAO);
+        tarefaDAO.setLogConclusaoDAO(logDAO);
+        tagDAO.setTarefaTagDAO(tarefaTagDAO);
     }
 
     @Override

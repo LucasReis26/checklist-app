@@ -57,12 +57,6 @@ public class MenuUsuarios {
                 default -> System.out.println("Opção inválida!");
             }
         } while (opcao != 0);
-        
-        try {
-            usuarioDAO.close();
-        } catch (Exception e) {
-            System.err.println("Erro ao fechar conexão: " + e.getMessage());
-        }
     }
 
     /**

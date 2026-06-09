@@ -3,6 +3,7 @@ package com.checklist.dao;
 import com.checklist.model.Categoria;
 import com.checklist.model.Tarefa;
 import com.checklist.model.Usuario;
+import com.checklist.manager.CategoriaTarefasManager;
 import com.checklist.persistence.ArquivoIndex;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +17,28 @@ public class CategoriaDAO {
     private final ArquivoIndex<Categoria> arqCategorias;
     private final UsuarioDAO usuarioDAO;
 
+    private final CategoriaTarefasManager categoriaTarefasManager;
+    private TarefaDAO tarefaDAO; // Injetado via setter para evitar dependência circular
+
+    public CategoriaDAO() throws Exception {
+        this(new UsuarioDAO(), new CategoriaTarefasManager());
+    }
+
     /**
      * Construtor da classe CategoriaDAO.
-     * Inicializa o arquivo com índice e o DAO de usuários.
      * 
+     * @param udao DAO de usuários
+     * @param ctm Gerenciador de tarefas da categoria
      * @throws Exception Se houver erro na inicialização
      */
-    // Explicado em docs/aux/categoriaDAO/construtor.md
-    public CategoriaDAO() throws Exception {
-        arqCategorias = new ArquivoIndex<>("categorias", Categoria.class.getConstructor());
-        usuarioDAO = new UsuarioDAO();
+    public CategoriaDAO(UsuarioDAO udao, CategoriaTarefasManager ctm) throws Exception {
+        arqCategorias = ArquivoIndex.getInstance("categorias", Categoria.class.getConstructor());
+        this.usuarioDAO = udao;
+        this.categoriaTarefasManager = ctm;
+    }
+
+    public void setTarefaDAO(TarefaDAO tdao) {
+        this.tarefaDAO = tdao;
     }
 
     /**
@@ -36,7 +49,7 @@ public class CategoriaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/categoriaDAO/buscarCategoria.md
-    public Categoria buscarCategoria(int id) throws Exception {
+    public synchronized Categoria buscarCategoria(int id) throws Exception {
         return arqCategorias.read(id);
     }
 
@@ -49,7 +62,7 @@ public class CategoriaDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/categoriaDAO/buscarCategoriasPorUsuario.md
-    public List<Categoria> buscarCategoriasPorUsuario(int idUser) throws Exception {
+    public synchronized List<Categoria> buscarCategoriasPorUsuario(int idUser) throws Exception {
         List<Categoria> resultado = new ArrayList<>();
         List<Categoria> todas = arqCategorias.listAll();
         
@@ -71,7 +84,7 @@ public class CategoriaDAO {
      * @throws Exception Se o usuário não existir
      */
     // Explicado em docs/aux/categoriaDAO/incluirCategoria.md
-    public boolean incluirCategoria(Categoria categoria) throws Exception {
+    public synchronized boolean incluirCategoria(Categoria categoria) throws Exception {
         // Validação de integridade referencial: usuário deve existir
         Usuario usuario = usuarioDAO.buscarUsuario(categoria.getIdUser());
         if (usuario == null) {
@@ -95,7 +108,7 @@ public class CategoriaDAO {
      * @throws Exception Se houver erro na alteração
      */
     // Explicado em docs/aux/categoriaDAO/alterarCategoria.md
-    public boolean alterarCategoria(Categoria categoria) throws Exception {
+    public synchronized boolean alterarCategoria(Categoria categoria) throws Exception {
         return arqCategorias.update(categoria);
     }
 
@@ -108,18 +121,19 @@ public class CategoriaDAO {
      * @throws Exception Se houver tarefas associadas
      */
     // Explicado em docs/aux/categoriaDAO/excluirCategoria.md
-    public boolean excluirCategoria(int id) throws Exception {
+    public synchronized boolean excluirCategoria(int id) throws Exception {
         Categoria categoria = buscarCategoria(id);
         if (categoria == null) {
             return false;
         }
         
         // Verificar se existem tarefas usando esta categoria
-        TarefaDAO tarefaDAO = new TarefaDAO();
-        List<Tarefa> tarefas = tarefaDAO.buscarTarefasPorCategoria(id);
-        if (!tarefas.isEmpty()) {
-            throw new Exception("Não é possível excluir categoria pois existem " + 
-                               tarefas.size() + " tarefas associadas!");
+        if (tarefaDAO != null) {
+            List<Tarefa> tarefas = tarefaDAO.buscarTarefasPorCategoria(id);
+            if (!tarefas.isEmpty()) {
+                throw new Exception("Não é possível excluir categoria pois existem " + 
+                                   tarefas.size() + " tarefas associadas!");
+            }
         }
         
         return arqCategorias.delete(id);
@@ -132,7 +146,7 @@ public class CategoriaDAO {
      * @throws Exception Se houver erro na listagem
      */
     // Explicado em docs/aux/categoriaDAO/listarTodas.md
-    public List<Categoria> listarTodas() throws Exception {
+    public synchronized List<Categoria> listarTodas() throws Exception {
         return arqCategorias.listAll();
     }
     

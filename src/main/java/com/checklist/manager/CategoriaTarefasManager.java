@@ -26,7 +26,7 @@ public class CategoriaTarefasManager {
      */
     // Explicado em docs/aux/categoriaTarefasManager/construtor.md
     public CategoriaTarefasManager() throws Exception {
-        arquivoRelacoes = new ArquivoIndex<>("categoria_tarefas_rel", 
+        arquivoRelacoes = ArquivoIndex.getInstance("categoria_tarefas_rel", 
                                               RegistroListaTarefas.class.getConstructor());
     }
     

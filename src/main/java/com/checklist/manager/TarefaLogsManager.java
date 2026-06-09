@@ -27,7 +27,7 @@ public class TarefaLogsManager {
      */
     // Explicado em docs/aux/tarefaLogsManager/construtor.md
     public TarefaLogsManager() throws Exception {
-        arquivoRelacoes = new ArquivoIndex<>("tarefa_logs_rel", 
+        arquivoRelacoes = ArquivoIndex.getInstance("tarefa_logs_rel", 
                                               RegistroListaLogs.class.getConstructor());
     }
     
@@ -116,21 +116,18 @@ public class TarefaLogsManager {
     }
     
     /**
-     * Busca o último log de conclusão de uma tarefa.
+     * Retorna o ID do último log de conclusão de uma tarefa.
      * 
      * @param idTarefa Identificador da tarefa
-     * @return Objeto LogConclusao do último log ou null
+     * @return ID do último log ou -1
      * @throws Exception Se houver erro na busca
      */
-    // Explicado em docs/aux/tarefaLogsManager/buscarUltimoLog.md
-    public LogConclusao buscarUltimoLog(int idTarefa) throws Exception {
+    public int buscarUltimoLogId(int idTarefa) throws Exception {
         List<Integer> logs = buscarLogsDaTarefa(idTarefa);
         if (!logs.isEmpty()) {
-            int ultimoLogId = logs.get(logs.size() - 1);
-            LogConclusaoDAO logDAO = new LogConclusaoDAO();
-            return logDAO.buscarLog(ultimoLogId);
+            return logs.get(logs.size() - 1);
         }
-        return null;
+        return -1;
     }
     
     /**

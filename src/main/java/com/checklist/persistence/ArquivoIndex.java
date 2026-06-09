@@ -1,5 +1,6 @@
 package com.checklist.persistence;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -12,6 +13,16 @@ import java.util.List;
  * @param <T> Tipo de registro que implementa a interface Registro
  */
 public class ArquivoIndex<T extends Registro> {
+    private static final java.util.Map<String, Object> INSTANCES = new java.util.HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public static synchronized <T extends Registro> ArquivoIndex<T> getInstance(String nomeArquivo, Constructor<T> construtor) throws Exception {
+        if (!INSTANCES.containsKey(nomeArquivo)) {
+            INSTANCES.put(nomeArquivo, new ArquivoIndex<>(nomeArquivo, construtor));
+        }
+        return (ArquivoIndex<T>) INSTANCES.get(nomeArquivo);
+    }
+
     // Explicado em docs/aux/arquivoIndex/arquivoIndex.md
     private RandomAccessFile arquivoDados;
     private RandomAccessFile arquivoIndice;
@@ -79,7 +90,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na inserção
      */
     // Explicado em docs/aux/arquivoIndex/inserirIndice.md
-    public void inserirIndice(int chave, long endereco) throws Exception {
+    public synchronized void inserirIndice(int chave, long endereco) throws Exception {
         if (raizIndice == -1) {
             IndexNode novaRaiz = new IndexNode(ordemArvore, true);
             novaRaiz.inserirChave(chave, endereco);
@@ -153,7 +164,7 @@ public class ArquivoIndex<T extends Registro> {
      * @return Lista de registros ordenados
      * @throws Exception Se houver erro na leitura
      */
-    public List<T> listInOrder() throws Exception {
+    public synchronized List<T> listInOrder() throws Exception {
         try {
             return listInOrderInternal();
         } catch (Exception e) {
@@ -395,7 +406,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na criação
      */
     // Explicado em docs/aux/arquivoIndex/create.md
-    public int create(T obj) throws Exception {
+    public synchronized int create(T obj) throws Exception {
         int id = obj.getId();
         if (id <= 0) {
             arquivoDados.seek(0);
@@ -443,7 +454,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na leitura
      */
     // Explicado em docs/aux/arquivoIndex/read.md
-    public T read(int id) throws Exception {
+    public synchronized T read(int id) throws Exception {
         long endereco = -1;
         try {
             endereco = buscarIndice(id);
@@ -517,7 +528,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na remoção
      */
     // Explicado em docs/aux/arquivoIndex/delete.md
-    public boolean delete(int id) throws Exception {
+    public synchronized boolean delete(int id) throws Exception {
         long endereco = buscarIndice(id);
         
         if (endereco == -1) {
@@ -579,7 +590,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na atualização
      */
     // Explicado em docs/aux/arquivoIndex/update.md
-    public boolean update(T novoObj) throws Exception {
+    public synchronized boolean update(T novoObj) throws Exception {
         int id = novoObj.getId();
         
         long enderecoAntigo = buscarIndice(id);
@@ -668,6 +679,13 @@ public class ArquivoIndex<T extends Registro> {
      */
     // Explicado em docs/aux/arquivoIndex/addDeleted.md
     private void addDeleted(int tamanhoEspaco, long enderecoEspaco) throws Exception {
+        // SEGURANÇA: Um registro deletado precisa de pelo menos 11 bytes (1 byte lapide + 2 bytes tam + 8 bytes proximo)
+        // para conseguir entrar na lista encadeada. Se for menor que isso, ignoramos o espaço para evitar corromper
+        // o registro vizinho.
+        if (tamanhoEspaco < 8) {
+            return;
+        }
+
         long cabecalhoLista = 4;
         arquivoDados.seek(cabecalhoLista);
         long primeiroDeletado = arquivoDados.readLong();
@@ -690,28 +708,39 @@ public class ArquivoIndex<T extends Registro> {
     // Explicado em docs/aux/arquivoIndex/getDeleted.md
     private long getDeleted(int tamanhoNecessario) throws Exception {
         long cabecalhoLista = 4;
-        arquivoDados.seek(cabecalhoLista);
-        long enderecoAtual = arquivoDados.readLong();
-        long enderecoAnterior = -1;
-        
-        while (enderecoAtual != -1) {
-            arquivoDados.seek(enderecoAtual + 1);
-            int tamanho = arquivoDados.readShort();
-            long proximo = arquivoDados.readLong();
+        try {
+            arquivoDados.seek(cabecalhoLista);
+            long enderecoAtual = arquivoDados.readLong();
+            long enderecoAnterior = -1;
             
-            if (tamanho >= tamanhoNecessario) {
-                if (enderecoAnterior == -1) {
-                    arquivoDados.seek(cabecalhoLista);
-                    arquivoDados.writeLong(proximo);
-                } else {
-                    arquivoDados.seek(enderecoAnterior + 1 + 2);
-                    arquivoDados.writeLong(proximo);
+            while (enderecoAtual != -1) {
+                // Verificação de segurança: endereço deve estar dentro do arquivo
+                if (enderecoAtual + 1 + 2 + 8 > arquivoDados.length()) {
+                    throw new IOException("Ponteiro de deletado inválido");
                 }
-                return enderecoAtual;
+
+                arquivoDados.seek(enderecoAtual + 1);
+                int tamanho = arquivoDados.readShort();
+                long proximo = arquivoDados.readLong();
+                
+                if (tamanho >= tamanhoNecessario) {
+                    if (enderecoAnterior == -1) {
+                        arquivoDados.seek(cabecalhoLista);
+                        arquivoDados.writeLong(proximo);
+                    } else {
+                        arquivoDados.seek(enderecoAnterior + 1 + 2);
+                        arquivoDados.writeLong(proximo);
+                    }
+                    return enderecoAtual;
+                }
+                
+                enderecoAnterior = enderecoAtual;
+                enderecoAtual = proximo;
             }
-            
-            enderecoAnterior = enderecoAtual;
-            enderecoAtual = proximo;
+        } catch (Exception e) {
+            // Se houver qualquer erro lendo a lista de deletados, limpa a lista para segurança
+            arquivoDados.seek(cabecalhoLista);
+            arquivoDados.writeLong(-1);
         }
         
         return -1;
@@ -754,7 +783,7 @@ public class ArquivoIndex<T extends Registro> {
         return no;
     }
     
-    public void rebuildIndex() throws Exception {
+    public synchronized void rebuildIndex() throws Exception {
         try {
             // Resetar arquivo de índice
             arquivoIndice.setLength(0);
@@ -814,7 +843,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro na leitura
      */
     // Explicado em docs/aux/arquivoIndex/listAll.md
-    public List<T> listAll() throws Exception {
+    public synchronized List<T> listAll() throws Exception {
         List<T> lista = new ArrayList<>();
         try {
             arquivoDados.seek(TAM_CABECALHO_DADOS);
@@ -854,7 +883,7 @@ public class ArquivoIndex<T extends Registro> {
      * @throws Exception Se houver erro no fechamento
      */
     // Explicado em docs/aux/arquivoIndex/close.md
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         if (arquivoDados != null) arquivoDados.close();
         if (arquivoIndice != null) arquivoIndice.close();
     }

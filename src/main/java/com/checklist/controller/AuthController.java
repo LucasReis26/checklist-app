@@ -30,9 +30,10 @@ public class AuthController {
                 session.setAttribute("user", usuario);
                 return ResponseEntity.ok(usuario);
             }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha inválidos");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Email ou senha inválidos"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro interno"));
         }
     }
 
@@ -40,15 +41,16 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody Usuario usuario, HttpSession session) {
         try {
             if (usuarioDAO.buscarUsuarioPorEmail(usuario.getEmail()) != null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email já cadastrado");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Email já cadastrado"));
             }
             if (usuarioDAO.incluirUsuario(usuario)) {
-                session.setAttribute("user", usuario);
+                // Removido o login automático por sessão para alinhar com o frontend
                 return ResponseEntity.ok(usuario);
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao cadastrar usuário");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Erro ao cadastrar usuário"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro interno"));
         }
     }
 

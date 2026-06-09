@@ -22,7 +22,7 @@ public class HashIndexTagTarefas implements HashIndex<Integer, List<Integer>> {
      * @throws Exception Se houver erro na inicialização
      */
     public HashIndexTagTarefas() throws Exception {
-        this.hashIndex = new HashExtensivel<>("idx_tag_tarefas", 
+        this.hashIndex = HashExtensivel.getInstance("idx_tag_tarefas", 
                                                RegistroListaTarefas.class.getConstructor());
     }
     

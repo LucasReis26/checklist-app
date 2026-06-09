@@ -73,12 +73,6 @@ public class MenuTarefas {
                 default -> System.out.println("Opção inválida!");
             }
         } while (opcao != 0);
-        
-        try {
-            tarefaDAO.close();
-        } catch (Exception e) {
-            System.err.println("Erro ao fechar conexão: " + e.getMessage());
-        }
     }
 
     /**

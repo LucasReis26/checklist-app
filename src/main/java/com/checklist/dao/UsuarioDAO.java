@@ -16,17 +16,21 @@ public class UsuarioDAO {
     private final UsuarioTarefasManager usuarioTarefasManager;
     private final UsuarioCategoriasManager usuarioCategoriasManager;
 
+    public UsuarioDAO() throws Exception {
+        this(new UsuarioTarefasManager(), new UsuarioCategoriasManager());
+    }
+
     /**
      * Construtor da classe UsuarioDAO.
-     * Inicializa o arquivo com índice e os gerenciadores de relacionamento.
      * 
+     * @param utm Gerenciador de tarefas do usuário
+     * @param ucm Gerenciador de categorias do usuário
      * @throws Exception Se houver erro na inicialização
      */
-    // Explicado em docs/aux/usuarioDAO/construtor.md
-    public UsuarioDAO() throws Exception {
-        arqUsuarios = new ArquivoIndex<>("usuarios", Usuario.class.getConstructor());
-        usuarioTarefasManager = new UsuarioTarefasManager();
-        usuarioCategoriasManager = new UsuarioCategoriasManager();
+    public UsuarioDAO(UsuarioTarefasManager utm, UsuarioCategoriasManager ucm) throws Exception {
+        arqUsuarios = ArquivoIndex.getInstance("usuarios", Usuario.class.getConstructor());
+        this.usuarioTarefasManager = utm;
+        this.usuarioCategoriasManager = ucm;
     }
 
     /**
@@ -181,7 +185,7 @@ public class UsuarioDAO {
      * @throws Exception Se houver erro no fechamento
      */
     // Explicado em docs/aux/usuarioDAO/close.md
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         arqUsuarios.close();
         usuarioTarefasManager.close();
         usuarioCategoriasManager.close();

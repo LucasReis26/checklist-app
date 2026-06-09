@@ -57,12 +57,6 @@ public class MenuCategorias {
                 default -> System.out.println("Opção inválida!");
             }
         } while (opcao != 0);
-        
-        try {
-            categoriaDAO.close();
-        } catch (Exception e) {
-            System.err.println("Erro ao fechar conexão: " + e.getMessage());
-        }
     }
 
     /**

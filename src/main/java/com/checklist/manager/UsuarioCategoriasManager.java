@@ -26,7 +26,7 @@ public class UsuarioCategoriasManager {
      */
     // Explicado em docs/aux/usuarioCategoriasManager/construtor.md
     public UsuarioCategoriasManager() throws Exception {
-        arquivoRelacoes = new ArquivoIndex<>("usuario_categorias_rel", 
+        arquivoRelacoes = ArquivoIndex.getInstance("usuario_categorias_rel", 
                                               RegistroListaCategorias.class.getConstructor());
     }
     

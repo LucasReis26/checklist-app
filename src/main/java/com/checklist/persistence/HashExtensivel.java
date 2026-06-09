@@ -16,6 +16,16 @@ import java.util.List;
  * [Diretório...]
  */
 public class HashExtensivel<T extends Registro> {
+    private static final java.util.Map<String, Object> INSTANCES = new java.util.HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public static synchronized <T extends Registro> HashExtensivel<T> getInstance(String nomeArquivo, Constructor<T> construtor) throws Exception {
+        if (!INSTANCES.containsKey(nomeArquivo)) {
+            INSTANCES.put(nomeArquivo, new HashExtensivel<>(nomeArquivo, construtor));
+        }
+        return (HashExtensivel<T>) INSTANCES.get(nomeArquivo);
+    }
+
     private RandomAccessFile arquivo;
     private int profundidadeGlobal;
     private int tamanhoBucket;
@@ -132,7 +142,7 @@ public class HashExtensivel<T extends Registro> {
         // O restante do espaço do bucket não precisa ser limpo se controlamos pela quantidade
     }
     
-    public void inserir(int chave, T registro) throws Exception {
+    public synchronized void inserir(int chave, T registro) throws Exception {
         byte[] dados = registro.toByteArray();
         arquivo.seek(arquivo.length());
         long enderecoRegistro = arquivo.getFilePointer();
@@ -164,7 +174,7 @@ public class HashExtensivel<T extends Registro> {
         }
     }
     
-    public T buscar(int chave) {
+    public synchronized T buscar(int chave) {
         try {
             int indice = hash(chave) % (1 << profundidadeGlobal);
             long posBucket = lerPosicaoDiretorio(indice);
@@ -187,7 +197,7 @@ public class HashExtensivel<T extends Registro> {
         return null;
     }
     
-    public boolean remover(int chave) throws Exception {
+    public synchronized boolean remover(int chave) throws Exception {
         int indice = hash(chave) % (1 << profundidadeGlobal);
         long posBucket = lerPosicaoDiretorio(indice);
         Bucket bucket = lerBucket(posBucket);
@@ -298,7 +308,7 @@ public class HashExtensivel<T extends Registro> {
         arquivo.writeLong(posBucket);
     }
     
-    public void close() throws Exception {
+    public synchronized void close() throws Exception {
         if (arquivo != null) arquivo.close();
     }
     

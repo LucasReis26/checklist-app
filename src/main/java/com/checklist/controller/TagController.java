@@ -23,14 +23,18 @@ public class TagController {
     @GetMapping
     public ResponseEntity<?> listar(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
-        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (user == null) {
+            System.err.println("DEBUG: [TagController] Não autorizado");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         try {
-            // As tags parecem ser globais ou não vinculadas a usuário no DAO
-            // Vou retornar todas por enquanto ou ver se Tag tem id_user
+            System.out.println("DEBUG: [TagController] Listando todas as tags");
             List<Tag> tags = tagDAO.listarTodas();
+            System.out.println("DEBUG: [TagController] Tags retornadas: " + (tags != null ? tags.size() : 0));
             return ResponseEntity.ok(tags);
         } catch (Exception e) {
+            System.err.println("DEBUG: [TagController] Erro: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }

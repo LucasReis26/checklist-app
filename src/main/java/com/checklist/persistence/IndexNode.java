@@ -129,6 +129,8 @@ public class IndexNode {
     
     /**
      * Encontra a posição onde uma chave deveria estar no nó.
+     * Para nós folha, o retorno é o índice exato da chave (se existir) ou onde deve ser inserida.
+     * Para nós internos, o retorno auxilia a navegação entre filhos.
      * 
      * @param chave Chave a ser localizada
      * @return Posição onde a chave está ou deveria estar
@@ -136,7 +138,8 @@ public class IndexNode {
     // Explicado em docs/aux/indexNode/encontrarPosicaoChave.md
     public int encontrarPosicaoChave(int chave) {
         int pos = 0;
-        while (pos < numChaves && chave >= chaves[pos]) {
+        // B+ Tree: usar > garante que em busca de folha paremos no índice exato da chave
+        while (pos < numChaves && chave > chaves[pos]) {
             pos++;
         }
         return pos;

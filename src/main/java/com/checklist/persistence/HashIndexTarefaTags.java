@@ -24,7 +24,7 @@ public class HashIndexTarefaTags implements HashIndex<Integer, List<Integer>> {
      */
     // Explicado em docs/aux/hashIndexTarefaTags/construtor.md
     public HashIndexTarefaTags() throws Exception {
-        this.hashIndex = new HashExtensivel<>("idx_tarefa_tags", 
+        this.hashIndex = HashExtensivel.getInstance("idx_tarefa_tags", 
                                                RegistroListaTags.class.getConstructor());
     }
     

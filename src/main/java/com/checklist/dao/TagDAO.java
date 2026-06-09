@@ -21,7 +21,13 @@ public class TagDAO {
      */
     // Explicado em docs/aux/tagDAO/construtor.md
     public TagDAO() throws Exception {
-        arqTags = new ArquivoIndex<>("tags", Tag.class.getConstructor());
+        arqTags = ArquivoIndex.getInstance("tags", Tag.class.getConstructor());
+    }
+
+    private TarefaTagDAO tarefaTagDAO; // Injetado via setter
+
+    public void setTarefaTagDAO(TarefaTagDAO ttdao) {
+        this.tarefaTagDAO = ttdao;
     }
 
     /**
@@ -32,7 +38,7 @@ public class TagDAO {
      * @throws Exception Se houver erro na busca
      */
     // Explicado em docs/aux/tagDAO/buscarTag.md
-    public Tag buscarTag(int id) throws Exception {
+    public synchronized Tag buscarTag(int id) throws Exception {
         return arqTags.read(id);
     }
 
@@ -44,7 +50,7 @@ public class TagDAO {
      * @throws Exception Se houver erro na inclusão
      */
     // Explicado em docs/aux/tagDAO/incluirTag.md
-    public boolean incluirTag(Tag tag) throws Exception {
+    public synchronized boolean incluirTag(Tag tag) throws Exception {
         return arqTags.create(tag) > 0;
     }
 
@@ -57,7 +63,7 @@ public class TagDAO {
      * @throws Exception Se a tag não existir ou houver erro na alteração
      */
     // Explicado em docs/aux/tagDAO/alterarTag.md
-    public boolean alterarTag(Tag tag) throws Exception {
+    public synchronized boolean alterarTag(Tag tag) throws Exception {
         // Primeiro verificar se a tag existe
         Tag existente = buscarTag(tag.getId());
         if (existente == null) {
@@ -83,20 +89,19 @@ public class TagDAO {
      * @throws Exception Se a tag não existir ou tiver tarefas associadas
      */
     // Explicado em docs/aux/tagDAO/excluirTag.md
-    public boolean excluirTag(int id) throws Exception {
+    public synchronized boolean excluirTag(int id) throws Exception {
         Tag existente = buscarTag(id);
         if (existente == null) {
-            throw new Exception("Tag não encontrada!");
+            return false;
         }
         
         // Verificar se existem tarefas usando esta tag (integridade referencial)
-        TarefaTagDAO tarefaTagDAO = new TarefaTagDAO();
-        List<TarefaTag> tarefas = tarefaTagDAO.buscarTarefasPorTag(id);
-        tarefaTagDAO.close();
-        
-        if (!tarefas.isEmpty()) {
-            throw new Exception("Não é possível excluir tag pois existem " + 
-                               tarefas.size() + " tarefas associadas a ela!");
+        if (tarefaTagDAO != null) {
+            List<TarefaTag> tarefas = tarefaTagDAO.buscarTarefasPorTag(id);
+            if (!tarefas.isEmpty()) {
+                throw new Exception("Não é possível excluir tag pois existem " + 
+                                   tarefas.size() + " tarefas associadas a ela!");
+            }
         }
         return arqTags.delete(id);
     }
@@ -108,7 +113,7 @@ public class TagDAO {
      * @return Lista de tags ordenadas
      * @throws Exception Se houver erro na listagem
      */
-    public List<Tag> listarOrdenado() throws Exception {
+    public synchronized List<Tag> listarOrdenado() throws Exception {
         return arqTags.listInOrder();
     }
     
@@ -119,7 +124,7 @@ public class TagDAO {
      * @throws Exception Se houver erro na listagem
      */
     // Explicado em docs/aux/tagDAO/listarTodas.md
-    public List<Tag> listarTodas() throws Exception {
+    public synchronized List<Tag> listarTodas() throws Exception {
         return arqTags.listAll();
     }
     
