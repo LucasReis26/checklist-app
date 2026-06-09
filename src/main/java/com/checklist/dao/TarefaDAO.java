@@ -92,31 +92,23 @@ public class TarefaDAO {
     // Explicado em docs/aux/tarefaDAO/buscarTarefasPorUsuario.md
     public synchronized List<Tarefa> buscarTarefasPorUsuario(int idUser) {
         try {
-            System.out.println("DEBUG: [TarefaDAO] Iniciando busca para usuário " + idUser);
             List<Integer> idsTarefas = usuarioTarefasManager.buscarTarefasDoUsuario(idUser);
-            System.out.println("DEBUG: [TarefaDAO] IDs no índice de relações: " + idsTarefas);
             
             // Forçar scan físico se o índice estiver vazio
             if (idsTarefas.isEmpty()) {
-                System.out.println("DEBUG: [TarefaDAO] Índice vazio! Iniciando scan físico de tarefas.db...");
                 List<Tarefa> todas = listarTodas();
-                System.out.println("DEBUG: [TarefaDAO] Total de tarefas físicas lidas: " + todas.size());
                 
                 for (Tarefa t : todas) {
-                    System.out.println("  -> Analisando Tarefa ID: " + t.getId() + " | Dono no DB: " + t.getIdUser());
                     if (t.getIdUser() == idUser) {
-                        System.out.println("  [!] Encontrada! Tentando re-vincular tarefa " + t.getId() + " ao usuário " + idUser);
                         try {
                             usuarioTarefasManager.adicionarTarefa(idUser, t.getId());
                         } catch (Exception e) { 
-                            System.err.println("  [X] Falha ao re-vincular tarefa " + t.getId() + ": " + e.toString());
                             e.printStackTrace();
                         }
                     }
                 }
                 // Recarrega após a tentativa de cura
                 idsTarefas = usuarioTarefasManager.buscarTarefasDoUsuario(idUser);
-                System.out.println("DEBUG: [TarefaDAO] IDs após tentativa de cura: " + idsTarefas);
             }
             
             List<Tarefa> resultado = new ArrayList<>();
@@ -130,7 +122,6 @@ public class TarefaDAO {
             }
             return resultado;
         } catch (Exception e) {
-            System.err.println("DEBUG: [TarefaDAO] Erro grave: " + e.getMessage());
             // Fallback total
             try {
                 List<Tarefa> todas = listarTodas();

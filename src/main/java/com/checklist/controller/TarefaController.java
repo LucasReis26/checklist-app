@@ -25,17 +25,13 @@ public class TarefaController {
     public ResponseEntity<?> listar(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
         if (user == null) {
-            System.err.println("DEBUG: [TarefaController] Chamada de listagem negada: Usuário não autenticado na sessão.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
-            System.out.println("DEBUG: [TarefaController] Buscando tarefas para usuário: " + user.getId() + " (" + user.getNome() + ")");
             List<Tarefa> tarefas = tarefaDAO.buscarTarefasPorUsuario(user.getId());
-            System.out.println("DEBUG: [TarefaController] Sucesso! Tarefas encontradas: " + (tarefas != null ? tarefas.size() : "null"));
             return ResponseEntity.ok(tarefas);
         } catch (Exception e) {
-            System.err.println("DEBUG: [TarefaController] ERRO FATAL ao listar: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));

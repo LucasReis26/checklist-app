@@ -24,17 +24,13 @@ public class CategoriaController {
     public ResponseEntity<?> listar(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
         if (user == null) {
-            System.err.println("DEBUG: [CategoriaController] Não autorizado");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
-            System.out.println("DEBUG: [CategoriaController] Listando categorias para usuário: " + user.getId());
             List<Categoria> categorias = categoriaDAO.buscarCategoriasPorUsuario(user.getId());
-            System.out.println("DEBUG: [CategoriaController] Categorias retornadas: " + (categorias != null ? categorias.size() : 0));
             return ResponseEntity.ok(categorias);
         } catch (Exception e) {
-            System.err.println("DEBUG: [CategoriaController] Erro: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
