@@ -3,6 +3,7 @@ package com.checklist.dao;
 import com.checklist.model.Tag;
 import com.checklist.model.TarefaTag;
 import com.checklist.persistence.ArquivoIndex;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,19 +13,20 @@ import java.util.List;
 public class TagDAO {
     // Explicado em docs/aux/tagDAO/tagDAO.md
     private final ArquivoIndex<Tag> arqTags;
+    private final UsuarioDAO usuarioDAO;
+    private TarefaTagDAO tarefaTagDAO; // Injetado via setter
 
     /**
      * Construtor da classe TagDAO.
-     * Inicializa o arquivo com índice para tags.
+     * Inicializa o arquivo com índice para tags e o DAO de usuários.
      * 
      * @throws Exception Se houver erro na inicialização
      */
     // Explicado em docs/aux/tagDAO/construtor.md
     public TagDAO() throws Exception {
         arqTags = ArquivoIndex.getInstance("tags", Tag.class.getConstructor());
+        usuarioDAO = new UsuarioDAO();
     }
-
-    private TarefaTagDAO tarefaTagDAO; // Injetado via setter
 
     public void setTarefaTagDAO(TarefaTagDAO ttdao) {
         this.tarefaTagDAO = ttdao;
@@ -43,6 +45,27 @@ public class TagDAO {
     }
 
     /**
+     * Busca todas as tags de um usuário específico.
+     * Realiza uma busca sequencial em todas as tags.
+     * 
+     * @param idUser Identificador do usuário
+     * @return Lista de tags do usuário
+     * @throws Exception Se houver erro na busca
+     */
+    public synchronized List<Tag> buscarTagsPorUsuario(int idUser) throws Exception {
+        List<Tag> resultado = new ArrayList<>();
+        List<Tag> todas = arqTags.listAll();
+        
+        for (Tag tag : todas) {
+            if (tag.getIdUser() == idUser) {
+                resultado.add(tag);
+            }
+        }
+        
+        return resultado;
+    }
+
+    /**
      * Inclui uma nova tag no sistema.
      * 
      * @param tag Objeto Tag a ser incluído
@@ -51,6 +74,10 @@ public class TagDAO {
      */
     // Explicado em docs/aux/tagDAO/incluirTag.md
     public synchronized boolean incluirTag(Tag tag) throws Exception {
+        // Validação de integridade referencial: usuário deve existir
+        if (usuarioDAO.buscarUsuario(tag.getIdUser()) == null) {
+            throw new Exception("Usuário com ID " + tag.getIdUser() + " não encontrado!");
+        }
         return arqTags.create(tag) > 0;
     }
 

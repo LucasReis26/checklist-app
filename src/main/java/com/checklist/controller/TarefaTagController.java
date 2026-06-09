@@ -20,10 +20,12 @@ public class TarefaTagController {
 
     private final TarefaTagDAO tarefaTagDAO;
     private final TarefaDAO tarefaDAO;
+    private final com.checklist.dao.TagDAO tagDAO;
 
-    public TarefaTagController(TarefaTagDAO tarefaTagDAO, TarefaDAO tarefaDAO) {
+    public TarefaTagController(TarefaTagDAO tarefaTagDAO, TarefaDAO tarefaDAO, com.checklist.dao.TagDAO tagDAO) {
         this.tarefaTagDAO = tarefaTagDAO;
         this.tarefaDAO = tarefaDAO;
+        this.tagDAO = tagDAO;
     }
 
     @GetMapping
@@ -56,6 +58,11 @@ public class TarefaTagController {
             Tarefa tarefa = tarefaDAO.buscarTarefa(tarefaTag.getIdTarefa());
             if (tarefa == null || tarefa.getIdUser() != user.getId()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("error", "Tarefa não pertence ao usuário"));
+            }
+
+            com.checklist.model.Tag tag = tagDAO.buscarTag(tarefaTag.getIdTag());
+            if (tag == null || tag.getIdUser() != user.getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("error", "Tag não pertence ao usuário"));
             }
 
             if (tarefaTagDAO.incluirRelacionamento(tarefaTag)) {

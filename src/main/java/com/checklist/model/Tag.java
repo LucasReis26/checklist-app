@@ -13,6 +13,8 @@ public class Tag implements Registro {
     // Explicado em docs/aux/tag/tag.md
     @JsonProperty("id_tag")
     private int id_tag;
+    @JsonProperty("id_user")
+    private int id_user;
     private String nome;
 
     /**
@@ -21,18 +23,19 @@ public class Tag implements Registro {
      */
     // Explicado em docs/aux/tag/construtorPadrao.md
     public Tag() {
-        this(-1, "");
+        this(-1, -1, "");
     }
 
     /**
      * Construtor com nome (sem ID).
      * O ID será gerado automaticamente pelo sistema.
      * 
+     * @param id_user ID do usuário dono da tag
      * @param nome Nome da tag
      */
     // Explicado em docs/aux/tag/construtorNome.md
-    public Tag(String nome) {
-        this(-1, nome);
+    public Tag(int id_user, String nome) {
+        this(-1, id_user, nome);
     }
 
     /**
@@ -40,11 +43,13 @@ public class Tag implements Registro {
      * Utilizado principalmente para reconstrução a partir do arquivo.
      * 
      * @param id_tag ID da tag
+     * @param id_user ID do usuário dono da tag
      * @param nome Nome da tag
      */
     // Explicado em docs/aux/tag/construtorCompleto.md
-    public Tag(int id_tag, String nome) {
+    public Tag(int id_tag, int id_user, String nome) {
         this.id_tag = id_tag;
+        this.id_user = id_user;
         this.nome = nome;
     }
 
@@ -71,6 +76,24 @@ public class Tag implements Registro {
     }
 
     /**
+     * Retorna o ID do usuário dono da tag.
+     * 
+     * @return ID do usuário
+     */
+    public int getIdUser() {
+        return id_user;
+    }
+
+    /**
+     * Define o ID do usuário dono da tag.
+     * 
+     * @param id_user Novo ID do usuário
+     */
+    public void setIdUser(int id_user) {
+        this.id_user = id_user;
+    }
+
+    /**
      * Retorna o nome da tag.
      * 
      * @return Nome da tag
@@ -92,10 +115,10 @@ public class Tag implements Registro {
 
     /**
      * Converte o objeto Tag em um array de bytes para persistência.
-     * Formato: [id_tag (4 bytes)] [nome (UTF)]
+     * Formato: [id_tag (4 bytes)] [id_user (4 bytes)] [nome (UTF)]
      * 
      * @return Array de bytes representando o objeto
-     * @throws IOException Se houver erro na conversão
+     * @throws IOException Se houver erro na conversion
      */
     @Override
     // Explicado em docs/aux/tag/toByteArray.md
@@ -103,6 +126,7 @@ public class Tag implements Registro {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(this.id_tag);
+        dos.writeInt(this.id_user);
         dos.writeUTF(this.nome);
         return baos.toByteArray();
     }
@@ -119,6 +143,7 @@ public class Tag implements Registro {
         ByteArrayInputStream bais = new ByteArrayInputStream(b);
         DataInputStream dis = new DataInputStream(bais);
         this.id_tag = dis.readInt();
+        this.id_user = dis.readInt();
         this.nome = dis.readUTF();
     }
 
@@ -131,6 +156,7 @@ public class Tag implements Registro {
     // Explicado em docs/aux/tag/toString.md
     public String toString() {
         return "\nID Tag..: " + this.id_tag +
+               "\nID Usuário: " + this.id_user +
                "\nNome....: " + this.nome;
     }
 }

@@ -94,11 +94,15 @@ public class MenuTags {
     private void incluirTag() {
         System.out.println("\nInclusão de tag");
 
+        System.out.print("ID do Usuário dono da tag: ");
+        int idUser = console.nextInt();
+        console.nextLine();
+
         System.out.print("Nome da tag: ");
         String nome = console.nextLine();
 
         try {
-            Tag tag = new Tag(nome);
+            Tag tag = new Tag(idUser, nome);
             if (tagDAO.incluirTag(tag)) {
                 System.out.println("Tag incluída com sucesso. ID: " + tag.getId());
             } else {

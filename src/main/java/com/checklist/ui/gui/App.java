@@ -580,17 +580,22 @@ public class App extends Application {
         grid.setVgap(10);
 
         TextField txtNome = new TextField(tag == null ? "" : tag.getNome());
+        TextField txtUserId = new TextField(tag == null ? "" : String.valueOf(tag.getIdUser()));
 
         grid.add(new Label("Nome:"), 0, 0);
         grid.add(txtNome, 1, 0);
+        grid.add(new Label("ID Usuário:"), 0, 1);
+        grid.add(txtUserId, 1, 1);
 
         Button btnSave = new Button("Salvar");
         btnSave.setOnAction(e -> {
             try {
+                int idUser = Integer.parseInt(txtUserId.getText());
                 if (tag == null) {
-                    tagDAO.incluirTag(new Tag(-1, txtNome.getText()));
+                    tagDAO.incluirTag(new Tag(idUser, txtNome.getText()));
                 } else {
                     tag.setNome(txtNome.getText());
+                    tag.setIdUser(idUser);
                     tagDAO.alterarTag(tag);
                 }
                 refreshTable(table, () -> tagDAO.listarTodas());
@@ -600,7 +605,7 @@ public class App extends Application {
             }
         });
 
-        grid.add(btnSave, 1, 1);
+        grid.add(btnSave, 1, 2);
         stage.setScene(new Scene(grid));
         stage.show();
     }
