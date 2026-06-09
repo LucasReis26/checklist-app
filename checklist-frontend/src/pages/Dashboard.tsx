@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   user: any;
@@ -30,8 +31,6 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newTagName, setNewTagName] = useState('');
 
-  const [backups, setBackups] = useState<any[]>([]);
-
   const loadData = async () => {
     try {
       const endpoints = [
@@ -39,8 +38,7 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
         '/api/tags',
         '/api/tarefas',
         '/api/logs',
-        '/api/tarefa-tags',
-        '/api/backup/list'
+        '/api/tarefa-tags'
       ];
 
       const responses = await Promise.all(endpoints.map(url => fetch(url)));
@@ -58,14 +56,13 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
         return [];
       }));
 
-      const [cats, tgs, tsks, lgs, ttags, bks] = data;
+      const [cats, tgs, tsks, lgs, ttags] = data;
 
       setCategories(Array.isArray(cats) ? cats : []);
       setTags(Array.isArray(tgs) ? tgs : []);
       setTasks((Array.isArray(tsks) ? tsks : []).map((t: any) => ({ ...t, id: t.id_tarefa || t.id })));
       setLogs(Array.isArray(lgs) ? lgs : []);
       setTaskTags(Array.isArray(ttags) ? ttags : []);
-      setBackups(Array.isArray(bks) ? bks : []);
     } catch (e) {
       console.error('Error loading dashboard data', e);
     }
@@ -80,19 +77,11 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
     onLogout();
   };
 
-  const handleBackup = async (type: 'huffman' | 'lzw') => {
-    try {
-      const res = await fetch(`/api/backup/${type}`, { method: 'POST' });
-      if (res.ok) {
-        alert('Backup realizado com sucesso!');
-        loadData();
-      } else {
-        alert('Erro ao realizar backup');
-      }
-    } catch (e) {
-      alert('Erro de conexão');
-    }
-  };
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    console.log('Current user debug:', user);
+    return user.role === 'ADMIN' || (user.email && user.email.toLowerCase() === 'admin@checklist.com');
+  }, [user]);
 
   const filteredTasks = useMemo(() => {
     let ts = tasks.filter(t => t.status !== 'deletado');
@@ -231,6 +220,12 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
           </div>
 
           <div className="app-header__user">
+            {isAdmin && (
+              <Link to="/admin" className="btn btn--outline btn--sm" style={{ marginRight: '8px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span className="btn__label">Admin</span>
+              </Link>
+            )}
             <div className="user-chip">
               <div className="user-chip__avatar">{user.nome[0].toUpperCase()}</div>
               <div className="user-chip__meta">
@@ -291,30 +286,6 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
                   <span className="tag-chip__btn">#{t.nome}</span>
                 </button>
               ))}
-            </div>
-          </section>
-
-          <section className="sidebar__section">
-            <header className="sidebar__header">
-              <h2 className="sidebar__title">Backup</h2>
-            </header>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-              <button onClick={() => handleBackup('huffman')} className="btn btn--outline btn--sm" style={{width: '100%'}}>
-                Backup Huffman
-              </button>
-              <button onClick={() => handleBackup('lzw')} className="btn btn--outline btn--sm" style={{width: '100%'}}>
-                Backup LZW
-              </button>
-              {backups.length > 0 && (
-                <div style={{marginTop: '8px', fontSize: '0.75rem', color: 'var(--muted-foreground)'}}>
-                  <strong>Últimos backups:</strong>
-                  <ul style={{listStyle: 'none', padding: 0, marginTop: '4px'}}>
-                    {backups.slice(-3).reverse().map((b, i) => (
-                      <li key={i} style={{marginBottom: '2px'}}>{b.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           </section>
         </aside>

@@ -55,10 +55,10 @@ public class BackupManager {
     /**
      * Cria um backup compactado usando Huffman.
      * 
-     * @return Nome do arquivo de backup gerado
+     * @return Mapa com estatísticas do backup
      * @throws IOException Se houver erro no processo
      */
-    public static String backupHuffman() throws IOException {
+    public static java.util.Map<String, Object> backupHuffman() throws IOException {
         // Cria diretório de backups se não existir
         File backupDir = new File(BACKUP_DIR);
         if (!backupDir.exists()) backupDir.mkdirs();
@@ -71,20 +71,10 @@ public class BackupManager {
         List<String> files = listDataFiles();
         
         if (files.isEmpty()) {
-            System.out.println("Nenhum arquivo de dados encontrado para backup.");
             return null;
         }
         
         long originalSize = calculateTotalSize(files);
-        
-        System.out.println("\n=== Backup Huffman ===");
-        System.out.println("Arquivos a serem compactados: " + files.size());
-        for (String f : files) {
-            System.out.println("  - " + f);
-        }
-        System.out.println("Tamanho total original: " + originalSize + " bytes (" + 
-                          String.format("%.2f", originalSize / 1024.0) + " KB)");
-        
         long startTime = System.nanoTime();
         
         // Executa compressão
@@ -92,26 +82,31 @@ public class BackupManager {
         
         long endTime = System.nanoTime();
         long compressedSize = new File(outputFile).length();
+        double timeMs = (endTime - startTime) / 1_000_000.0;
+        double compressionRatio = (1 - (double)compressedSize / originalSize) * 100;
         
-        System.out.println("\n--- Resultados ---");
-        System.out.println("Arquivo gerado: " + outputFile);
-        System.out.println("Tamanho compactado: " + compressedSize + " bytes (" + 
-                          String.format("%.2f", compressedSize / 1024.0) + " KB)");
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("filename", new File(outputFile).getName());
+        stats.put("algorithm", "Huffman");
+        stats.put("originalSize", originalSize);
+        stats.put("compressedSize", compressedSize);
+        stats.put("compressionRatio", compressionRatio);
+        stats.put("executionTimeMs", timeMs);
+        stats.put("fileCount", files.size());
+        stats.put("timestamp", new java.util.Date().getTime());
         
-        double taxa = (1 - (double)compressedSize / originalSize) * 100;
-        System.out.printf("Taxa de compressão: %.2f%%\n", taxa);
-        System.out.printf("Tempo de execução: %.3f ms\n", (endTime - startTime) / 1_000_000.0);
+        saveMetadata(outputFile, stats);
         
-        return outputFile;
+        return stats;
     }
     
     /**
      * Cria um backup compactado usando LZW.
      * 
-     * @return Nome do arquivo de backup gerado
+     * @return Mapa com estatísticas do backup
      * @throws IOException Se houver erro no processo
      */
-    public static String backupLZW() throws IOException {
+    public static java.util.Map<String, Object> backupLZW() throws IOException {
         File backupDir = new File(BACKUP_DIR);
         if (!backupDir.exists()) backupDir.mkdirs();
         
@@ -121,37 +116,81 @@ public class BackupManager {
         List<String> files = listDataFiles();
         
         if (files.isEmpty()) {
-            System.out.println("Nenhum arquivo de dados encontrado para backup.");
             return null;
         }
         
         long originalSize = calculateTotalSize(files);
-        
-        System.out.println("\n=== Backup LZW ===");
-        System.out.println("Arquivos a serem compactados: " + files.size());
-        for (String f : files) {
-            System.out.println("  - " + f);
-        }
-        System.out.println("Tamanho total original: " + originalSize + " bytes (" + 
-                          String.format("%.2f", originalSize / 1024.0) + " KB)");
-        
         long startTime = System.nanoTime();
         
         LZWCompressor.compressFiles(files, outputFile);
         
         long endTime = System.nanoTime();
         long compressedSize = new File(outputFile).length();
+        double timeMs = (endTime - startTime) / 1_000_000.0;
+        double compressionRatio = (1 - (double)compressedSize / originalSize) * 100;
         
-        System.out.println("\n--- Resultados ---");
-        System.out.println("Arquivo gerado: " + outputFile);
-        System.out.println("Tamanho compactado: " + compressedSize + " bytes (" + 
-                          String.format("%.2f", compressedSize / 1024.0) + " KB)");
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("filename", new File(outputFile).getName());
+        stats.put("algorithm", "LZW");
+        stats.put("originalSize", originalSize);
+        stats.put("compressedSize", compressedSize);
+        stats.put("compressionRatio", compressionRatio);
+        stats.put("executionTimeMs", timeMs);
+        stats.put("fileCount", files.size());
+        stats.put("timestamp", new java.util.Date().getTime());
         
-        double taxa = (1 - (double)compressedSize / originalSize) * 100;
-        System.out.printf("Taxa de compressão: %.2f%%\n", taxa);
-        System.out.printf("Tempo de execução: %.3f ms\n", (endTime - startTime) / 1_000_000.0);
+        saveMetadata(outputFile, stats);
         
-        return outputFile;
+        return stats;
+    }
+
+    private static void saveMetadata(String backupFile, java.util.Map<String, Object> stats) {
+        try {
+            String metaFile = backupFile + ".meta";
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\n");
+            stats.forEach((k, v) -> {
+                sb.append("  \"").append(k).append("\": ");
+                if (v instanceof String) sb.append("\"").append(v).append("\"");
+                else sb.append(v);
+                sb.append(",\n");
+            });
+            if (sb.length() > 2) sb.setLength(sb.length() - 2);
+            sb.append("\n}");
+            Files.write(Paths.get(metaFile), sb.toString().getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static java.util.Map<String, Object> getMetadata(String backupName) {
+        try {
+            Path path = Paths.get(BACKUP_DIR, backupName + ".meta");
+            if (!Files.exists(path)) return null;
+            
+            String content = new String(Files.readAllBytes(path));
+            java.util.Map<String, Object> stats = new java.util.HashMap<>();
+            // Parser manual simplificado (evitando dependências extras para este caso específico)
+            content = content.replace("{", "").replace("}", "").trim();
+            String[] lines = content.split(",\n");
+            for (String line : lines) {
+                String[] parts = line.split(":");
+                if (parts.length == 2) {
+                    String key = parts[0].trim().replace("\"", "");
+                    String val = parts[1].trim();
+                    if (val.startsWith("\"")) {
+                        stats.put(key, val.replace("\"", ""));
+                    } else if (val.contains(".")) {
+                        stats.put(key, Double.parseDouble(val));
+                    } else {
+                        stats.put(key, Long.parseLong(val));
+                    }
+                }
+            }
+            return stats;
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     /**
@@ -164,13 +203,10 @@ public class BackupManager {
         System.out.println("\n=== Restauração Huffman ===");
         System.out.println("Arquivo: " + backupFile);
         
-        String restoreDir = DADOS_DIR + "_restaurado_" + 
-                           new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+        // No ambiente web, restauramos diretamente sobre a pasta de dados
+        HuffmanCompressor.decompressFiles(backupFile, DADOS_DIR);
         
-        HuffmanCompressor.decompressFiles(backupFile, restoreDir);
-        
-        System.out.println("Arquivos restaurados em: " + restoreDir);
-        System.out.println("Para usar os dados restaurados, copie os arquivos para a pasta " + DADOS_DIR);
+        System.out.println("Arquivos restaurados em: " + DADOS_DIR);
     }
     
     /**
@@ -183,12 +219,9 @@ public class BackupManager {
         System.out.println("\n=== Restauração LZW ===");
         System.out.println("Arquivo: " + backupFile);
         
-        String restoreDir = DADOS_DIR + "_restaurado_" + 
-                           new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+        LZWCompressor.decompressFiles(backupFile, DADOS_DIR);
         
-        LZWCompressor.decompressFiles(backupFile, restoreDir);
-        
-        System.out.println("Arquivos restaurados em: " + restoreDir);
+        System.out.println("Arquivos restaurados em: " + DADOS_DIR);
     }
     
     /**

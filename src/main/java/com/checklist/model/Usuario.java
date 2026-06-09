@@ -15,6 +15,7 @@ public class Usuario implements Registro {
     private String nome;
     private String email;
     private String senha;
+    private String role; // "USER" ou "ADMIN"
 
     /**
      * Construtor padrão.
@@ -22,7 +23,7 @@ public class Usuario implements Registro {
      */
     // Explicado em docs/aux/usuario/construtorPadrao.md
     public Usuario() {
-        this(-1, "", "", "");
+        this(-1, "", "", "", "USER");
     }
 
     /**
@@ -35,7 +36,7 @@ public class Usuario implements Registro {
      */
     // Explicado em docs/aux/usuario/construtorDados.md
     public Usuario(String n, String e, String s) {
-        this(-1, n, e, s);
+        this(-1, n, e, s, "USER");
     }
 
     /**
@@ -47,12 +48,26 @@ public class Usuario implements Registro {
      * @param e Email do usuário
      * @param s Senha do usuário
      */
-    // Explicado em docs/aux/usuario/construtorCompleto.md
     public Usuario(int i, String n, String e, String s) {
+        this(i, n, e, s, "USER");
+    }
+
+    /**
+     * Construtor completo com ID e Role.
+     * 
+     * @param i ID do usuário
+     * @param n Nome do usuário
+     * @param e Email do usuário
+     * @param s Senha do usuário
+     * @param r Role do usuário
+     */
+    // Explicado em docs/aux/usuario/construtorCompleto.md
+    public Usuario(int i, String n, String e, String s, String r) {
         this.id_user = i;
         this.nome = n;
         this.email = e;
         this.senha = s;
+        this.role = r;
     }
 
     /**
@@ -138,8 +153,35 @@ public class Usuario implements Registro {
     }
 
     /**
+     * Retorna a role do usuário.
+     * 
+     * @return Role do usuário
+     */
+    public String getRole() {
+        return role;
+    }
+
+    /**
+     * Define a role do usuário.
+     * 
+     * @param role Nova role do usuário
+     */
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    /**
+     * Verifica se o usuário é administrador.
+     * 
+     * @return true se for admin
+     */
+    public boolean isAdmin() {
+        return "ADMIN".equalsIgnoreCase(this.role) || "admin@checklist.com".equalsIgnoreCase(this.email);
+    }
+
+    /**
      * Converte o objeto Usuario em um array de bytes para persistência.
-     * Formato: [id (4 bytes)] [nome (UTF)] [email (UTF)] [senha (UTF)]
+     * Formato: [id (4 bytes)] [nome (UTF)] [email (UTF)] [senha (UTF)] [role (UTF)]
      * 
      * @return Array de bytes representando o objeto
      * @throws IOException Se houver erro na conversão
@@ -153,6 +195,7 @@ public class Usuario implements Registro {
         dos.writeUTF(this.nome);
         dos.writeUTF(this.email);
         dos.writeUTF(this.senha);
+        dos.writeUTF(this.role != null ? this.role : "USER");
         return baos.toByteArray();
     }
 
@@ -171,6 +214,11 @@ public class Usuario implements Registro {
         this.nome = dis.readUTF();
         this.email = dis.readUTF();
         this.senha = dis.readUTF();
+        try {
+            this.role = dis.readUTF();
+        } catch (EOFException e) {
+            this.role = "USER";
+        }
     }
 
     /**
@@ -184,6 +232,7 @@ public class Usuario implements Registro {
         return "\nID........: " + this.id_user +
                "\nNome......: " + this.nome +
                "\nEmail.....: " + this.email +
-               "\nSenha.....: " + this.senha;
+               "\nSenha.....: " + this.senha +
+               "\nRole......: " + this.role;
     }
 }

@@ -21,10 +21,11 @@ public class BackupController {
     public ResponseEntity<?> backupHuffman(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!user.isAdmin()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado: apenas administradores"));
 
         try {
-            String path = BackupManager.backupHuffman();
-            return ResponseEntity.ok(Map.of("message", "Backup Huffman realizado com sucesso", "file", path));
+            Map<String, Object> stats = BackupManager.backupHuffman();
+            return ResponseEntity.ok(Map.of("message", "Backup Huffman realizado com sucesso", "stats", stats));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
@@ -35,20 +36,58 @@ public class BackupController {
     public ResponseEntity<?> backupLZW(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!user.isAdmin()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado: apenas administradores"));
 
         try {
-            String path = BackupManager.backupLZW();
-            return ResponseEntity.ok(Map.of("message", "Backup LZW realizado com sucesso", "file", path));
+            Map<String, Object> stats = BackupManager.backupLZW();
+            return ResponseEntity.ok(Map.of("message", "Backup LZW realizado com sucesso", "stats", stats));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
         }
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<?> getBackupStats(@RequestParam String name, HttpSession session) {
+        Usuario user = (Usuario) session.getAttribute("user");
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!user.isAdmin()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado"));
+
+        Map<String, Object> stats = BackupManager.getMetadata(name);
+        if (stats == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return ResponseEntity.ok(stats);
+    }
+
+    @PostMapping("/restore")
+    public ResponseEntity<?> restoreBackup(@RequestParam String name, HttpSession session) {
+        Usuario user = (Usuario) session.getAttribute("user");
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!user.isAdmin()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado"));
+
+        try {
+            String path = "./backups/" + name;
+            File file = new File(path);
+            if (!file.exists()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Arquivo não encontrado"));
+
+            if (name.endsWith(".huf")) {
+                BackupManager.restoreHuffman(path);
+            } else if (name.endsWith(".lzw")) {
+                BackupManager.restoreLZW(path);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Formato inválido"));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Restauração concluída. Os arquivos foram extraídos."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro na restauração"));
+        }
+    }
     @GetMapping("/list")
     public ResponseEntity<?> listBackups(HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("user");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!user.isAdmin()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado: apenas administradores"));
 
         try {
             File backupDir = new File("./backups");

@@ -32,7 +32,27 @@ public class DaoConfig {
 
     @Bean
     public UsuarioDAO usuarioDAO(UsuarioTarefasManager utm, UsuarioCategoriasManager ucm) throws Exception {
-        return new UsuarioDAO(utm, ucm);
+        UsuarioDAO dao = new UsuarioDAO(utm, ucm);
+        
+        // Inicialização automática do Administrador se o sistema estiver vazio
+        try {
+            if (dao.listarTodos().isEmpty()) {
+                System.out.println("Sistema sem usuários. Criando conta de administrador padrão...");
+                com.checklist.model.Usuario admin = new com.checklist.model.Usuario(
+                    -1,
+                    "Administrador", 
+                    "admin@checklist.com", 
+                    "admin",
+                    "ADMIN"
+                );
+                dao.incluirUsuario(admin);
+                System.out.println("Conta 'admin@checklist.com' com senha 'admin' criada com sucesso.");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao inicializar usuário admin: " + e.getMessage());
+        }
+        
+        return dao;
     }
 
     @Bean

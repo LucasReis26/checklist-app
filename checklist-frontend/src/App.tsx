@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
 import './index.css';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login onLogin={setUser} />} />
         <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
         <Route path="/dashboard" element={user ? <Dashboard user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={user ? <Admin user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />} />
       </Routes>
     </Router>
   );

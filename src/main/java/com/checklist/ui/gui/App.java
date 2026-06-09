@@ -651,9 +651,10 @@ public class App extends Application {
             infoLabel.setText("Executando backup Huffman...");
             new Thread(() -> {
                 try {
-                    String result = BackupManager.backupHuffman();
+                    java.util.Map<String, Object> stats = BackupManager.backupHuffman();
+                    String filename = stats != null ? (String) stats.get("filename") : "Nenhum arquivo";
                     javafx.application.Platform.runLater(() -> 
-                        infoLabel.setText("✓ Backup Huffman concluído: " + result));
+                        infoLabel.setText("✓ Backup Huffman concluído: " + filename));
                 } catch (Exception ex) {
                     javafx.application.Platform.runLater(() -> 
                         infoLabel.setText("✗ Erro no backup Huffman: " + ex.getMessage()));
@@ -669,9 +670,10 @@ public class App extends Application {
             infoLabel.setText("Executando backup LZW...");
             new Thread(() -> {
                 try {
-                    String result = BackupManager.backupLZW();
+                    java.util.Map<String, Object> stats = BackupManager.backupLZW();
+                    String filename = stats != null ? (String) stats.get("filename") : "Nenhum arquivo";
                     javafx.application.Platform.runLater(() -> 
-                        infoLabel.setText("✓ Backup LZW concluído: " + result));
+                        infoLabel.setText("✓ Backup LZW concluído: " + filename));
                 } catch (Exception ex) {
                     javafx.application.Platform.runLater(() -> 
                         infoLabel.setText("✗ Erro no backup LZW: " + ex.getMessage()));
