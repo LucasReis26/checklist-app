@@ -16,8 +16,8 @@ com/checklist/ui/gui/App$DataLoader.class
 com/checklist/persistence/RegistroListaCategorias.class
 com/checklist/util/HuffmanCompressor$Node.class
 com/checklist/ui/gui/App$4.class
-com/checklist/dao/TarefaDAO.class
 com/checklist/persistence/HashExtensivel$ParChaveEndereco.class
+com/checklist/dao/TarefaDAO.class
 com/checklist/persistence/IndexNode.class
 com/checklist/controller/CategoriaController.class
 com/checklist/persistence/Registro.class
@@ -30,8 +30,8 @@ com/checklist/persistence/HashIndexTagTarefas.class
 com/checklist/persistence/HashIndex.class
 com/checklist/persistence/HashIndexTarefaTags.class
 com/checklist/persistence/RegistroListaTarefas.class
-com/checklist/ui/gui/App$3.class
 com/checklist/controller/BackupController.class
+com/checklist/ui/gui/App$3.class
 com/checklist/ChecklistApplication.class
 com/checklist/model/TarefaTag.class
 com/checklist/manager/TarefaLogsManager.class
@@ -47,8 +47,8 @@ com/checklist/ui/gui/App$2.class
 com/checklist/manager/CategoriaTarefasManager.class
 com/checklist/manager/UsuarioCategoriasManager.class
 com/checklist/model/Tarefa.class
-com/checklist/ui/gui/App.class
 com/checklist/controller/TarefaTagController.class
+com/checklist/ui/gui/App.class
 com/checklist/persistence/ArquivoIndex.class
 com/checklist/ui/cli/MenuCategorias.class
 com/checklist/persistence/RegistroListaTags.class
