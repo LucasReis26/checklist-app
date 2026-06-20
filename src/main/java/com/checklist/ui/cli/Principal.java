@@ -1,4 +1,10 @@
 package com.checklist.ui.cli;
+
+import com.checklist.manager.BackupManager;
+import com.checklist.manager.CategoriaTarefasManager;
+import com.checklist.manager.TarefaLogsManager;
+import com.checklist.manager.UsuarioCategoriasManager;
+import com.checklist.manager.UsuarioTarefasManager;
 import java.util.Scanner;
 
 /**
@@ -13,7 +19,6 @@ public class Principal {
      * 
      * @param args Argumentos da linha de comando (não utilizados)
      */
-    // Explicado em docs/aux/principal/main.md
     public static void main(String[] args) {
         Scanner console = new Scanner(System.in);
         int opcao;
@@ -28,7 +33,8 @@ public class Principal {
                 System.out.println("3 - Categorias");
                 System.out.println("4 - Tags");
                 System.out.println("5 - Logs de Conclusão");
-                System.out.println("6 - Backup/Restauração"); 
+                System.out.println("6 - Backup/Restauração");
+                System.out.println("7 - Buscar Padrões (KMP / Boyer-Moore)"); // NOVA OPÇÃO
                 System.out.println("0 - Sair");
 
                 System.out.print("\nOpção: ");
@@ -62,6 +68,10 @@ public class Principal {
                     case 6 -> {
                         MenuBackup menuBackup = new MenuBackup();
                         menuBackup.menu();
+                    }
+                    case 7 -> { // NOVA OPÇÃO
+                        MenuBusca menuBusca = new MenuBusca();
+                        menuBusca.menu();
                     }
                     case 0 -> System.out.println("Saindo...");
                     default -> System.out.println("Opção inválida!");

@@ -1,52 +1,57 @@
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/CategoriaDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/BackupController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/ArquivoIndex.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroListaEnderecos.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuTarefas.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/LogConclusaoDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/Registro.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/util/LZWCompressor.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/HashIndexUsuario.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/Tarefa.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/Categoria.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/LogConclusao.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/manager/UsuarioCategoriasManager.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/gui/App.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuBackup.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/manager/CategoriaTarefasManager.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuUsuarios.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/util/HuffmanCompressor.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/TarefaTag.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/Tag.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/TagDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/AuthController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/IndexNode.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/UsuarioDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/CategoriaController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/HashIndexTarefaTags.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroListaTags.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuTags.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/model/Usuario.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/manager/BackupManager.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuCategorias.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroListaLogs.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/TarefaTagController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/LogController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/manager/TarefaLogsManager.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroListaCategorias.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/Principal.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/config/WebConfig.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/Arquivo.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/config/DaoConfig.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/HashIndexTagTarefas.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/TarefaController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/HashIndex.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/controller/TagController.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ChecklistApplication.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroListaTarefas.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/RegistroIndex.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/TarefaTagDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/dao/TarefaDAO.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/ui/cli/MenuLogs.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/manager/UsuarioTarefasManager.java
-/home/cinema/projetos/faculdade/checklist-app/src/main/java/com/checklist/persistence/HashExtensivel.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuLogs.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/CategoriaController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuBackup.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/Usuario.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/config/WebConfig.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuUsuarios.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/gui/App.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuTarefas.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/config/DaoConfig.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/util/HuffmanCompressor.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/Tarefa.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/LogController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/search/BoyerMooreSearch.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/Registro.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/HashIndex.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroListaTags.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ChecklistApplication.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/Principal.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/manager/TarefaLogsManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroIndex.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/Arquivo.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/HashExtensivel.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/search/SearchManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/HashIndexTarefaTags.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuCategorias.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/TarefaTagController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/TarefaTag.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroListaTarefas.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/BackupController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/ArquivoIndex.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/LogConclusao.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/TagDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/HashIndexTagTarefas.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/IndexNode.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/util/LZWCompressor.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/TagController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/UsuarioDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/AuthController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuBusca.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/manager/CategoriaTarefasManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/TarefaTagDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/manager/UsuarioCategoriasManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/HashIndexUsuario.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/CategoriaDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroListaCategorias.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/Tag.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/LogConclusaoDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/crypto/XORCrypto.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/controller/TarefaController.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/dao/TarefaDAO.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/manager/BackupManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/model/Categoria.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroListaEnderecos.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/search/KMPSearch.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/manager/UsuarioTarefasManager.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/persistence/RegistroListaLogs.java
+/home/thayna-andrade/Área de trabalho/novapasta/checklist-app/src/main/java/com/checklist/ui/cli/MenuTags.java

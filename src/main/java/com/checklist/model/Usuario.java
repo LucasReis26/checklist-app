@@ -1,5 +1,6 @@
 package com.checklist.model;
 
+import com.checklist.crypto.XORCrypto;
 import com.checklist.persistence.Registro;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
@@ -14,7 +15,7 @@ public class Usuario implements Registro {
     private int id_user;
     private String nome;
     private String email;
-    private String senha;
+    private String senha; // Armazenada criptografada
     private String role; // "USER" ou "ADMIN"
 
     /**
@@ -32,7 +33,7 @@ public class Usuario implements Registro {
      * 
      * @param n Nome do usuário
      * @param e Email do usuário
-     * @param s Senha do usuário
+     * @param s Senha do usuário (será criptografada)
      */
     // Explicado em docs/aux/usuario/construtorDados.md
     public Usuario(String n, String e, String s) {
@@ -46,7 +47,7 @@ public class Usuario implements Registro {
      * @param i ID do usuário
      * @param n Nome do usuário
      * @param e Email do usuário
-     * @param s Senha do usuário
+     * @param s Senha do usuário (será criptografada)
      */
     public Usuario(int i, String n, String e, String s) {
         this(i, n, e, s, "USER");
@@ -58,7 +59,7 @@ public class Usuario implements Registro {
      * @param i ID do usuário
      * @param n Nome do usuário
      * @param e Email do usuário
-     * @param s Senha do usuário
+     * @param s Senha do usuário (será criptografada)
      * @param r Role do usuário
      */
     // Explicado em docs/aux/usuario/construtorCompleto.md
@@ -66,7 +67,8 @@ public class Usuario implements Registro {
         this.id_user = i;
         this.nome = n;
         this.email = e;
-        this.senha = s;
+        // Criptografa a senha ao criar o usuário
+        this.senha = XORCrypto.encryptSenha(s);
         this.role = r;
     }
 
@@ -133,23 +135,34 @@ public class Usuario implements Registro {
     }
     
     /**
-     * Retorna a senha do usuário.
+     * Retorna a senha do usuário (descriptografada).
      * 
-     * @return Senha do usuário
+     * @return Senha do usuário descriptografada
      */
     // Explicado em docs/aux/usuario/getSenha.md
     public String getSenha() { 
-        return senha; 
+        // Descriptografa a senha ao ler
+        return XORCrypto.decryptSenha(this.senha);
     }
     
     /**
-     * Define a senha do usuário.
+     * Define a senha do usuário (criptografada).
      * 
-     * @param senha Nova senha do usuário
+     * @param senha Nova senha do usuário (será criptografada)
      */
     // Explicado em docs/aux/usuario/setSenha.md
     public void setSenha(String senha) { 
-        this.senha = senha; 
+        // Criptografa a senha antes de armazenar
+        this.senha = XORCrypto.encryptSenha(senha);
+    }
+
+    /**
+     * Retorna a senha criptografada (para armazenamento).
+     * 
+     * @return Senha criptografada
+     */
+    public String getSenhaEncrypted() {
+        return this.senha;
     }
 
     /**
@@ -194,6 +207,7 @@ public class Usuario implements Registro {
         dos.writeInt(this.id_user);
         dos.writeUTF(this.nome);
         dos.writeUTF(this.email);
+        // Armazena a senha já criptografada
         dos.writeUTF(this.senha);
         dos.writeUTF(this.role != null ? this.role : "USER");
         return baos.toByteArray();
@@ -213,6 +227,7 @@ public class Usuario implements Registro {
         this.id_user = dis.readInt();
         this.nome = dis.readUTF();
         this.email = dis.readUTF();
+        // Lê a senha já criptografada do arquivo
         this.senha = dis.readUTF();
         try {
             this.role = dis.readUTF();
@@ -232,7 +247,7 @@ public class Usuario implements Registro {
         return "\nID........: " + this.id_user +
                "\nNome......: " + this.nome +
                "\nEmail.....: " + this.email +
-               "\nSenha.....: " + this.senha +
+               "\nSenha.....: " + this.getSenha() +  // Mostra descriptografada
                "\nRole......: " + this.role;
     }
 }

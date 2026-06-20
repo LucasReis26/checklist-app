@@ -13,6 +13,8 @@ import com.checklist.model.Tag;
 import com.checklist.model.Tarefa;
 import com.checklist.model.TarefaTag;
 import com.checklist.model.Usuario;
+import com.checklist.search.SearchManager;
+
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
@@ -756,6 +758,135 @@ public class App extends Application {
         if (tarefaTagDAO != null) tarefaTagDAO.close();
     }
 
+        // --- BUSCA ---
+    private Tab createBuscaTab() {
+        Tab tab = new Tab("Busca");
+        tab.setClosable(false);
+        
+        VBox layout = new VBox(15);
+        layout.setPadding(new Insets(20));
+        
+        Label title = new Label("Busca de Padrões (KMP / Boyer-Moore)");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        
+        // Campos de entrada
+        Label lblAlgoritmo = new Label("Algoritmo:");
+        ComboBox<String> cbAlgoritmo = new ComboBox<>();
+        cbAlgoritmo.getItems().addAll("KMP", "Boyer-Moore");
+        cbAlgoritmo.setValue("KMP");
+        cbAlgoritmo.setPrefWidth(150);
+        
+        Label lblEntidade = new Label("Buscar em:");
+        ComboBox<String> cbEntidade = new ComboBox<>();
+        cbEntidade.getItems().addAll("Tarefas (Título/Descrição)", "Usuários (Nome/Email)");
+        cbEntidade.setValue("Tarefas (Título/Descrição)");
+        cbEntidade.setPrefWidth(200);
+        
+        Label lblPadrao = new Label("Padrão:");
+        TextField txtPadrao = new TextField();
+        txtPadrao.setPromptText("Digite o texto a ser buscado...");
+        txtPadrao.setPrefWidth(300);
+        
+        Button btnBuscar = new Button("Buscar");
+        btnBuscar.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        
+        // Área de resultados
+        Label lblResultados = new Label("Resultados:");
+        TextArea txtResultados = new TextArea();
+        txtResultados.setEditable(false);
+        txtResultados.setPrefHeight(400);
+        txtResultados.setWrapText(true);
+        
+        // Layout
+        HBox topBox = new HBox(20);
+        topBox.getChildren().addAll(lblAlgoritmo, cbAlgoritmo, lblEntidade, cbEntidade);
+        topBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        
+        HBox searchBox = new HBox(10);
+        searchBox.getChildren().addAll(lblPadrao, txtPadrao, btnBuscar);
+        searchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        
+        layout.getChildren().addAll(title, topBox, searchBox, lblResultados, txtResultados);
+        
+        // Ação do botão
+        btnBuscar.setOnAction(e -> {
+            String pattern = txtPadrao.getText();
+            if (pattern.isEmpty()) {
+                txtResultados.setText("Por favor, digite um padrão para buscar.");
+                return;
+            }
+            
+            String algoritmo = cbAlgoritmo.getValue();
+            String entidade = cbEntidade.getValue();
+            
+            txtResultados.setText("Buscando com " + algoritmo + " em " + entidade + "...\n");
+            
+            new Thread(() -> {
+                try {
+                    SearchManager.SearchAlgorithm alg = algoritmo.equals("KMP") ? 
+                        SearchManager.SearchAlgorithm.KMP : 
+                        SearchManager.SearchAlgorithm.BOYER_MOORE;
+                    
+                    SearchManager searchManager = new SearchManager(tarefaDAO, usuarioDAO);
+                    
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("=== Resultados da Busca ===\n");
+                    sb.append("Algoritmo: ").append(algoritmo).append("\n");
+                    sb.append("Padrão: \"").append(pattern).append("\"\n");
+                    sb.append("Entidade: ").append(entidade).append("\n\n");
+                    
+                    long inicio = System.nanoTime();
+                    
+                    if (entidade.contains("Tarefas")) {
+                        List<Tarefa> results = searchManager.searchTarefas(pattern, alg);
+                        long fim = System.nanoTime();
+                        
+                        sb.append("Encontrados: ").append(results.size()).append(" tarefa(s)\n");
+                        sb.append("Tempo: ").append(String.format("%.3f", (fim - inicio) / 1_000_000.0)).append(" ms\n\n");
+                        
+                        if (!results.isEmpty()) {
+                            for (Tarefa t : results) {
+                                sb.append("--- Tarefa ID: ").append(t.getId()).append(" ---\n");
+                                sb.append("Título: ").append(t.getTitulo()).append("\n");
+                                sb.append("Descrição: ").append(t.getDescricao()).append("\n");
+                                sb.append("Status: ").append(t.getStatus()).append("\n");
+                                sb.append("Vencimento: ").append(t.getDataVencimento()).append("\n\n");
+                            }
+                        } else {
+                            sb.append("Nenhuma tarefa encontrada com o padrão informado.\n");
+                        }
+                        
+                    } else {
+                        List<Usuario> results = searchManager.searchUsuarios(pattern, alg);
+                        long fim = System.nanoTime();
+                        
+                        sb.append("Encontrados: ").append(results.size()).append(" usuário(s)\n");
+                        sb.append("Tempo: ").append(String.format("%.3f", (fim - inicio) / 1_000_000.0)).append(" ms\n\n");
+                        
+                        if (!results.isEmpty()) {
+                            for (Usuario u : results) {
+                                sb.append("--- Usuário ID: ").append(u.getId()).append(" ---\n");
+                                sb.append("Nome: ").append(u.getNome()).append("\n");
+                                sb.append("Email: ").append(u.getEmail()).append("\n\n");
+                            }
+                        } else {
+                            sb.append("Nenhum usuário encontrado com o padrão informado.\n");
+                        }
+                    }
+                    
+                    javafx.application.Platform.runLater(() -> 
+                        txtResultados.setText(sb.toString()));
+                    
+                } catch (Exception ex) {
+                    javafx.application.Platform.runLater(() -> 
+                        txtResultados.setText("Erro na busca: " + ex.getMessage()));
+                }
+            }).start();
+        });
+        
+        tab.setContent(layout);
+        return tab;
+    }
     public static void main(String[] args) {
         launch(args);
     }
