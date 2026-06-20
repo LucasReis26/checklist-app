@@ -1,10 +1,10 @@
 package com.checklist.util;
 
-import com.checklist.persistence.Arquivo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -13,11 +13,11 @@ import java.util.PriorityQueue;
 
 /**
  * Implementação do algoritmo de compressão Huffman.
- * Compressão byte a byte com árvore de Huffman.
+ * Correção:
+ * Compressão a nível de arquivo - cada arquivo é comprimido individualmente.
  */
 public class HuffmanCompressor {
     
-    // Nó da árvore de Huffman
     static class Node implements Comparable<Node> {
         byte data;
         int freq;
@@ -46,44 +46,54 @@ public class HuffmanCompressor {
     
     /**
      * Compacta uma lista de arquivos em um único arquivo usando Huffman.
+     * CADA arquivo é comprimido INDIVIDUALMENTE antes de ser empacotado.
      * 
      * @param filePaths Lista de caminhos dos arquivos a serem compactados
      * @param outputPath Caminho do arquivo de saída
      * @throws IOException Se houver erro na leitura/escrita
      */
     public static void compressFiles(List<String> filePaths, String outputPath) throws IOException {
-        // Empacota todos os arquivos em um único byte array com cabeçalho
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
+        // Escreve o número de arquivos
+        dos.writeInt(filePaths.size());
+        
+        long totalOriginalSize = 0;
+        long totalCompressedSize = 0;
+        
         for (String path : filePaths) {
-            java.io.File file = new java.io.File(path);
+            File file = new File(path);
             if (!file.exists() || file.length() == 0) continue;
             
-            byte[] data = Files.readAllBytes(Paths.get(path));
-            dos.writeUTF(path);           // Nome do arquivo
-            dos.writeLong(file.length()); // Tamanho original
-            dos.write(data);              // Conteúdo
+            byte[] data = Files.readAllBytes(file.toPath());
+            totalOriginalSize += data.length;
+            
+            // COMPRIME CADA ARQUIVO INDIVIDUALMENTE
+            byte[] compressedData = huffmanCompress(data);
+            totalCompressedSize += compressedData.length;
+            
+            // Escreve o arquivo comprimido no pacote
+            dos.writeUTF(path);                    // Nome do arquivo
+            dos.writeLong(file.length());          // Tamanho original
+            dos.writeInt(compressedData.length);   // Tamanho comprimido
+            dos.write(compressedData);             // Dados comprimidos
         }
         dos.close();
         
-        byte[] input = baos.toByteArray();
-        
-        // Compacta usando Huffman
-        byte[] compressed = huffmanCompress(input);
-        
-        // Escreve o arquivo compactado
-        Files.write(Paths.get(outputPath), compressed);
+        // Escreve o arquivo final
+        Files.write(Paths.get(outputPath), baos.toByteArray());
         
         System.out.println("Arquivo compactado gerado: " + outputPath);
-        System.out.println("Tamanho original (todos arquivos): " + input.length + " bytes");
-        System.out.println("Tamanho compactado (Huffman): " + compressed.length + " bytes");
-        double taxa = (1 - (double)compressed.length / input.length) * 100;
+        System.out.println("Tamanho original (todos arquivos): " + totalOriginalSize + " bytes");
+        System.out.println("Tamanho compactado (Huffman): " + totalCompressedSize + " bytes");
+        System.out.println("Tamanho do pacote final: " + baos.size() + " bytes");
+        double taxa = (1 - (double)baos.size() / totalOriginalSize) * 100;
         System.out.printf("Taxa de compressão: %.2f%%\n", taxa);
     }
     
     /**
-     * Algoritmo de compressão Huffman.
+     * Algoritmo de compressão Huffman para um único array de bytes.
      * 
      * @param input Dados de entrada
      * @return Dados compactados
@@ -105,7 +115,6 @@ public class HuffmanCompressor {
             }
         }
         
-        // Caso especial: apenas um byte único
         if (pq.size() == 1) {
             Node leaf = pq.poll();
             Node parent = new Node(leaf.freq, leaf, null);
@@ -137,7 +146,7 @@ public class HuffmanCompressor {
             }
             dos.writeInt(numSymbols);
             
-            // Escreve os pares (byte, frequência) para reconstruir a árvore
+            // Escreve os pares (byte, frequência)
             for (int i = 0; i < 256; i++) {
                 if (freq[i] > 0) {
                     dos.writeByte(i);
@@ -151,9 +160,8 @@ public class HuffmanCompressor {
                 sb.append(codes[b & 0xFF]);
             }
             
-            // Converte bits para bytes
             String bits = sb.toString();
-            dos.writeInt(bits.length()); // Quantidade de bits
+            dos.writeInt(bits.length());
             
             byte[] compressedData = new byte[(bits.length() + 7) / 8];
             for (int i = 0; i < bits.length(); i++) {
@@ -170,9 +178,6 @@ public class HuffmanCompressor {
         return baos.toByteArray();
     }
     
-    /**
-     * Gera os códigos Huffman recursivamente.
-     */
     private static void generateCodes(Node node, String code, String[] codes) {
         if (node == null) return;
         
@@ -187,44 +192,43 @@ public class HuffmanCompressor {
     
     /**
      * Descompacta um arquivo compactado com Huffman.
-     * 
-     * @param compressedFile Caminho do arquivo compactado
-     * @param outputDir Diretório de saída para restaurar os arquivos
-     * @throws IOException Se houver erro na leitura/escrita
      */
     public static void decompressFiles(String compressedFile, String outputDir) throws IOException {
-        byte[] compressed = Files.readAllBytes(Paths.get(compressedFile));
-        byte[] decompressed = huffmanDecompress(compressed);
-        
-        // Restaura os arquivos individuais a partir do byte array
-        ByteArrayInputStream bais = new ByteArrayInputStream(decompressed);
+        byte[] data = Files.readAllBytes(Paths.get(compressedFile));
+        ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         
-        java.io.File dir = new java.io.File(outputDir);
+        int numFiles = dis.readInt();
+        
+        File dir = new File(outputDir);
         if (!dir.exists()) dir.mkdirs();
         
-        while (dis.available() > 0) {
+        for (int i = 0; i < numFiles; i++) {
             String filename = dis.readUTF();
-            long fileSize = dis.readLong();
-            byte[] data = new byte[(int) fileSize];
-            dis.read(data);
+            long originalSize = dis.readLong();
+            int compressedSize = dis.readInt();
             
-            String outputPath = outputDir + "/" + new java.io.File(filename).getName();
-            Files.write(Paths.get(outputPath), data);
-            System.out.println("Restaurado: " + outputPath);
+            byte[] compressedData = new byte[compressedSize];
+            dis.read(compressedData);
+            
+            // Descomprime o arquivo individual
+            byte[] decompressed = huffmanDecompress(compressedData);
+            
+            String outputPath = outputDir + "/" + new File(filename).getName();
+            Files.write(Paths.get(outputPath), decompressed);
+            System.out.println("Restaurado: " + outputPath + " (" + decompressed.length + " bytes)");
         }
         
         dis.close();
     }
     
     /**
-     * Descompacta dados Huffman.
+     * Descompacta dados Huffman de um único arquivo.
      */
     private static byte[] huffmanDecompress(byte[] compressed) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
         DataInputStream dis = new DataInputStream(bais);
         
-        // Lê o cabeçalho
         int numSymbols = dis.readInt();
         int[] freq = new int[256];
         for (int i = 0; i < numSymbols; i++) {
@@ -232,7 +236,6 @@ public class HuffmanCompressor {
             freq[symbol] = dis.readInt();
         }
         
-        // Reconstrói a árvore
         PriorityQueue<Node> pq = new PriorityQueue<>();
         for (int i = 0; i < 256; i++) {
             if (freq[i] > 0) {
@@ -255,13 +258,11 @@ public class HuffmanCompressor {
         
         Node root = pq.poll();
         
-        // Lê os bits compactados
         int totalBits = dis.readInt();
         int bytesLength = (totalBits + 7) / 8;
         byte[] compressedData = new byte[bytesLength];
         dis.read(compressedData);
         
-        // Decodifica
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Node current = root;
         int bitCount = 0;

@@ -1,6 +1,5 @@
 package com.checklist.util;
 
-import com.checklist.persistence.Arquivo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -15,7 +14,7 @@ import java.util.Map;
 
 /**
  * Implementação do algoritmo de compressão LZW.
- * Compressão baseada em dicionário de sequências de bytes.
+ * Compressão a nível de arquivo - cada arquivo é comprimido individualmente.
  */
 public class LZWCompressor {
     
@@ -24,43 +23,54 @@ public class LZWCompressor {
     
     /**
      * Compacta uma lista de arquivos em um único arquivo usando LZW.
+     * CADA arquivo é comprimido INDIVIDUALMENTE antes de ser empacotado.
      * 
      * @param filePaths Lista de caminhos dos arquivos a serem compactados
      * @param outputPath Caminho do arquivo de saída
      * @throws IOException Se houver erro na leitura/escrita
      */
     public static void compressFiles(List<String> filePaths, String outputPath) throws IOException {
-        // Empacota todos os arquivos
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
+        
+        // Escreve o número de arquivos no cabeçalho
+        dos.writeInt(filePaths.size());
+        
+        long totalOriginalSize = 0;
+        long totalCompressedSize = 0;
         
         for (String path : filePaths) {
             java.io.File file = new java.io.File(path);
             if (!file.exists() || file.length() == 0) continue;
             
             byte[] data = Files.readAllBytes(Paths.get(path));
-            dos.writeUTF(path);
-            dos.writeLong(file.length());
-            dos.write(data);
+            totalOriginalSize += data.length;
+            
+            // COMPRIME CADA ARQUIVO INDIVIDUALMENTE
+            byte[] compressedData = lzwCompress(data);
+            totalCompressedSize += compressedData.length;
+            
+            // Escreve o arquivo comprimido no pacote
+            dos.writeUTF(path);                    // Nome do arquivo
+            dos.writeLong(file.length());          // Tamanho original
+            dos.writeInt(compressedData.length);   // Tamanho comprimido
+            dos.write(compressedData);             // Dados já comprimidos
         }
         dos.close();
         
-        byte[] input = baos.toByteArray();
-        
-        // Compacta usando LZW
-        byte[] compressed = lzwCompress(input);
-        
-        Files.write(Paths.get(outputPath), compressed);
+        // Salva o pacote final
+        Files.write(Paths.get(outputPath), baos.toByteArray());
         
         System.out.println("Arquivo compactado gerado: " + outputPath);
-        System.out.println("Tamanho original (todos arquivos): " + input.length + " bytes");
-        System.out.println("Tamanho compactado (LZW): " + compressed.length + " bytes");
-        double taxa = (1 - (double)compressed.length / input.length) * 100;
+        System.out.println("Tamanho original (todos arquivos): " + totalOriginalSize + " bytes");
+        System.out.println("Tamanho compactado (soma dos arquivos): " + totalCompressedSize + " bytes");
+        System.out.println("Tamanho do pacote final: " + baos.size() + " bytes");
+        double taxa = (1 - (double)baos.size() / totalOriginalSize) * 100;
         System.out.printf("Taxa de compressão: %.2f%%\n", taxa);
     }
     
     /**
-     * Algoritmo de compressão LZW.
+     * Algoritmo de compressão LZW para um único array de bytes.
      * 
      * @param input Dados de entrada
      * @return Dados compactados
@@ -107,7 +117,7 @@ public class LZWCompressor {
             output.add(dict.get(current));
         }
         
-        // Converte códigos para bytes (usando CODE_SIZE bits por código)
+        // Converte códigos para bytes
         return encodeCodes(output);
     }
     
@@ -152,36 +162,44 @@ public class LZWCompressor {
      * Descompacta um arquivo compactado com LZW.
      * 
      * @param compressedFile Caminho do arquivo compactado
-     * @param outputDir Diretório de saída
+     * @param outputDir Diretório de saída para restaurar os arquivos
      * @throws IOException Se houver erro na leitura/escrita
      */
     public static void decompressFiles(String compressedFile, String outputDir) throws IOException {
-        byte[] compressed = Files.readAllBytes(Paths.get(compressedFile));
-        byte[] decompressed = lzwDecompress(compressed);
-        
-        // Restaura arquivos individuais
-        ByteArrayInputStream bais = new ByteArrayInputStream(decompressed);
+        byte[] data = Files.readAllBytes(Paths.get(compressedFile));
+        ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
+        
+        // Lê o número de arquivos
+        int numFiles = dis.readInt();
         
         java.io.File dir = new java.io.File(outputDir);
         if (!dir.exists()) dir.mkdirs();
         
-        while (dis.available() > 0) {
+        System.out.println("Restaurando " + numFiles + " arquivo(s)...");
+        
+        for (int i = 0; i < numFiles; i++) {
             String filename = dis.readUTF();
-            long fileSize = dis.readLong();
-            byte[] data = new byte[(int) fileSize];
-            dis.read(data);
+            long originalSize = dis.readLong();
+            int compressedSize = dis.readInt();
+            
+            byte[] compressedData = new byte[compressedSize];
+            dis.read(compressedData);
+            
+            // Descomprime o arquivo individual
+            byte[] decompressed = lzwDecompress(compressedData);
             
             String outputPath = outputDir + "/" + new java.io.File(filename).getName();
-            Files.write(Paths.get(outputPath), data);
-            System.out.println("Restaurado: " + outputPath);
+            Files.write(Paths.get(outputPath), decompressed);
+            System.out.println("Restaurado: " + outputPath + " (" + decompressed.length + " bytes)");
         }
         
         dis.close();
+        System.out.println("Restauração concluída!");
     }
     
     /**
-     * Descompacta dados LZW.
+     * Descompacta dados LZW de um único arquivo.
      */
     private static byte[] lzwDecompress(byte[] compressed) throws IOException {
         // Decodifica códigos
