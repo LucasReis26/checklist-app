@@ -57,4 +57,46 @@ public class SearchController {
                     .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro interno no servidor"));
         }
     }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> searchUsers(
+            @RequestParam String pattern,
+            @RequestParam String algorithm,
+            HttpSession session) {
+        
+        Usuario user = (Usuario) session.getAttribute("user");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole()) || 
+                (user.getEmail() != null && user.getEmail().toLowerCase().equals("admin@checklist.com"));
+        if (!isAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado: apenas administradores"));
+        }
+
+        try {
+            SearchAlgorithm alg = "BM".equalsIgnoreCase(algorithm) || "BOYER_MOORE".equalsIgnoreCase(algorithm)
+                    ? SearchAlgorithm.BOYER_MOORE
+                    : SearchAlgorithm.KMP;
+
+            List<Usuario> matchingUsers = searchManager.searchUsuarios(pattern, alg);
+            
+            List<Map<String, Object>> result = matchingUsers.stream().map(u -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", u.getId());
+                map.put("nome", u.getNome());
+                map.put("email", u.getEmail());
+                map.put("role", u.getRole());
+                map.put("senhaCriptografada", u.getSenhaEncrypted());
+                return map;
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro interno no servidor"));
+        }
+    }
 }

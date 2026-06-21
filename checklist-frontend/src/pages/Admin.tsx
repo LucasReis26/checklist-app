@@ -13,6 +13,8 @@ const Admin = ({ user, onLogout }: AdminProps) => {
   const [loading, setLoading] = useState(false);
   const [selectedStats, setSelectedStats] = useState<any>(null);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchAlgorithm, setUserSearchAlgorithm] = useState<'KMP' | 'BM'>('KMP');
   const navigate = useNavigate();
 
   const loadBackups = async () => {
@@ -30,9 +32,13 @@ const Admin = ({ user, onLogout }: AdminProps) => {
     }
   };
 
-  const loadUsers = async () => {
+  const loadUsers = async (query = '', algorithm = 'KMP') => {
     try {
-      const res = await fetch('/api/auth/users');
+      let url = '/api/auth/users';
+      if (query.trim()) {
+        url = `/api/search/users?pattern=${encodeURIComponent(query)}&algorithm=${algorithm}`;
+      }
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setUsersList(data);
@@ -40,6 +46,24 @@ const Admin = ({ user, onLogout }: AdminProps) => {
     } catch (e) {
       console.error('Error loading users', e);
     }
+  };
+
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
+  const highlightPattern = (text: string, pattern: string) => {
+    if (!text || !pattern) return text;
+    const parts = text.split(new RegExp(`(${escapeRegExp(pattern)})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) => 
+          part.toLowerCase() === pattern.toLowerCase() 
+            ? <mark key={i} style={{ backgroundColor: 'rgba(91, 91, 240, 0.2)', color: '#5b5bf0', padding: '1px 3px', borderRadius: '4px', fontWeight: 'bold' }}>{part}</mark>
+            : part
+        )}
+      </>
+    );
   };
 
   useEffect(() => {
@@ -182,6 +206,51 @@ const Admin = ({ user, onLogout }: AdminProps) => {
                   <h1 className="toolbar__title">Contas de Usuários</h1>
                   <p className="toolbar__subtitle">Gerencie os acessos e veja as senhas criptografadas com XOR no banco de dados</p>
                 </div>
+                <div className="toolbar__actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div className="search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <svg className="search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style={{ position: 'absolute', left: '12px', color: 'var(--muted-foreground)' }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input 
+                      type="search" 
+                      className="search__input" 
+                      placeholder="Buscar por nome/email..." 
+                      style={{ paddingLeft: '36px', height: '38px' }}
+                      value={userSearchQuery}
+                      onChange={(e) => {
+                        setUserSearchQuery(e.target.value);
+                        if (!e.target.value.trim()) {
+                          loadUsers('', userSearchAlgorithm);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          loadUsers(userSearchQuery, userSearchAlgorithm);
+                        }
+                      }}
+                    />
+                  </div>
+                  <select 
+                    className="field__input" 
+                    style={{ height: '38px', padding: '0 8px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
+                    value={userSearchAlgorithm}
+                    onChange={(e) => {
+                      const alg = e.target.value as 'KMP' | 'BM';
+                      setUserSearchAlgorithm(alg);
+                      if (userSearchQuery.trim()) {
+                        loadUsers(userSearchQuery, alg);
+                      }
+                    }}
+                  >
+                    <option value="KMP">KMP</option>
+                    <option value="BM">Boyer-Moore</option>
+                  </select>
+                  <button 
+                    onClick={() => loadUsers(userSearchQuery, userSearchAlgorithm)} 
+                    className="btn btn--primary"
+                    style={{ height: '38px' }}
+                  >
+                    Buscar
+                  </button>
+                </div>
               </div>
 
               <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -233,7 +302,7 @@ const Admin = ({ user, onLogout }: AdminProps) => {
                           </div>
                           <div>
                             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--foreground)' }}>
-                              {u.nome}
+                              {highlightPattern(u.nome, userSearchQuery)}
                             </h3>
                             <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>ID: #{u.id}</span>
                           </div>
@@ -255,7 +324,7 @@ const Admin = ({ user, onLogout }: AdminProps) => {
                             Endereço de E-mail
                           </span>
                           <span style={{ fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 500 }}>
-                            {u.email}
+                            {highlightPattern(u.email, userSearchQuery)}
                           </span>
                         </div>
 
