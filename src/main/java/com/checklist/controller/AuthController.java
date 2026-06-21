@@ -68,4 +68,33 @@ public class AuthController {
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> listUsers(HttpSession session) {
+        Usuario user = (Usuario) session.getAttribute("user");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!user.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acesso negado: apenas administradores"));
+        }
+
+        try {
+            java.util.List<Usuario> usuarios = usuarioDAO.listarTodos();
+            java.util.List<Map<String, Object>> result = usuarios.stream().map(u -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", u.getId());
+                map.put("nome", u.getNome());
+                map.put("email", u.getEmail());
+                map.put("role", u.getRole());
+                map.put("senhaCriptografada", u.getSenhaEncrypted());
+                return map;
+            }).collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
+        }
+    }
 }

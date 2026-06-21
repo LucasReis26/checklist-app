@@ -13,6 +13,7 @@ Sistema de gerenciamento de tarefas, categorias e tags desenvolvido para a disci
 - [Fase II](./docs/fase-ii.md)
 - [Fase III](./docs/fase-iii.md)
 - [Fase IV](./docs/fase-iv.md)
+- [Fase V](./RELATORIO_FASE_V.md)
 
 ## Descrição do Projeto
 O **Checklist App** é um sistema projetado para o cadastro e gerenciamento de Tarefas, Categorias e Tags. O sistema permite:
@@ -91,3 +92,15 @@ Após iniciar, a aplicação estará disponível em:
 **[http://localhost:8080](http://localhost:8080)**
 
 ---
+
+## Fase V - Casamento de Padrões e Criptografia
+
+Nesta fase final, foram adicionados algoritmos de busca por padrões textuais e segurança para campos sensíveis:
+
+1. **Casamento de Padrões**:
+   - **KMP (Knuth-Morris-Pratt)**: Algoritmo de busca linear com complexidade temporal ótima $O(n + m)$ que utiliza a tabela LPS (*Longest Proper Prefix which is also Suffix*) para evitar retrocessos de busca no texto principal.
+   - **Boyer-Moore**: Algoritmo que compara o padrão da direita para a esquerda a fim de realizar saltos grandes no texto, utilizando Heurística de Caractere Ruim (*Bad Character*) e de Sufixo Bom (*Good Suffix*).
+   - Ambos os algoritmos foram integrados a um endpoint REST (`/api/search`) e a uma interface interativa no Frontend ("Pesquisar Padrão").
+
+2. **Criptografia**:
+   - **XOR (OU Exclusivo)**: Algoritmo simétrico aplicado ao campo `senha` do usuário para garantir privacidade dos dados armazenados no arquivo binário de usuários, codificado em Base64 antes de ser gravado.

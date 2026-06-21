@@ -21,6 +21,13 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   
+  const [isPatternSearchModalOpen, setIsPatternSearchModalOpen] = useState(false);
+  const [patternQuery, setPatternQuery] = useState('');
+  const [patternAlgorithm, setPatternAlgorithm] = useState('KMP');
+  const [patternResults, setPatternResults] = useState<any[]>([]);
+  const [isSearchingPattern, setIsSearchingPattern] = useState(false);
+  const [patternSearchError, setPatternSearchError] = useState('');
+  
   const [editingTask, setEditingTask] = useState<any>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
@@ -208,6 +215,46 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
     return colors[id % colors.length];
   };
 
+  const handlePatternSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patternQuery.trim()) return;
+
+    setIsSearchingPattern(true);
+    setPatternSearchError('');
+    try {
+      const response = await fetch(`/api/search?pattern=${encodeURIComponent(patternQuery)}&algorithm=${patternAlgorithm}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPatternResults(Array.isArray(data) ? data : []);
+      } else {
+        setPatternSearchError('Erro ao realizar busca no servidor');
+      }
+    } catch (err) {
+      console.error(err);
+      setPatternSearchError('Erro de conexão com o servidor');
+    } finally {
+      setIsSearchingPattern(false);
+    }
+  };
+
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
+  const highlightPattern = (text: string, pattern: string) => {
+    if (!text || !pattern) return text;
+    const parts = text.split(new RegExp(`(${escapeRegExp(pattern)})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) => 
+          part.toLowerCase() === pattern.toLowerCase() 
+            ? <mark key={i} style={{ backgroundColor: 'rgba(91, 91, 240, 0.2)', color: '#5b5bf0', padding: '1px 3px', borderRadius: '4px', fontWeight: 'bold' }}>{part}</mark>
+            : part
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="app-body">
       <header className="app-header">
@@ -226,6 +273,14 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
                 <span className="btn__label">Admin</span>
               </Link>
             )}
+            <button 
+              onClick={() => { setIsPatternSearchModalOpen(true); setPatternQuery(''); setPatternResults([]); setPatternSearchError(''); }} 
+              className="btn btn--outline btn--sm" 
+              style={{ marginRight: '8px' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span className="btn__label">Pesquisar Padrão (KMP/BM)</span>
+            </button>
             <div className="user-chip">
               <div className="user-chip__avatar">{user.nome[0].toUpperCase()}</div>
               <div className="user-chip__meta">
@@ -489,6 +544,110 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
                 <button type="submit" className="btn btn--primary">Criar</button>
               </footer>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isPatternSearchModalOpen && (
+        <div className="modal modal--open">
+          <div className="modal__backdrop" onClick={() => setIsPatternSearchModalOpen(false)}></div>
+          <div className="modal__panel" style={{ maxWidth: '600px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <header className="modal__header">
+              <h2 className="modal__title">Pesquisar por Padrão (KMP / BM)</h2>
+              <button className="icon-btn" onClick={() => setIsPatternSearchModalOpen(false)}>✕</button>
+            </header>
+            <form onSubmit={handlePatternSearch} className="form" style={{ marginBottom: '1.25rem', flexShrink: 0 }}>
+              <div className="field-row">
+                <div className="field" style={{ flex: 2 }}>
+                  <label className="field__label">Padrão de Busca</label>
+                  <input 
+                    type="text" 
+                    className="field__input field__input--plain" 
+                    placeholder="Digite a palavra ou frase a buscar..." 
+                    value={patternQuery} 
+                    onChange={e => setPatternQuery(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div className="field" style={{ flex: 1 }}>
+                  <label className="field__label">Algoritmo</label>
+                  <select 
+                    className="field__input field__input--plain" 
+                    value={patternAlgorithm} 
+                    onChange={e => setPatternAlgorithm(e.target.value)}
+                  >
+                    <option value="KMP">KMP (Knuth-Morris-Pratt)</option>
+                    <option value="BM">Boyer-Moore</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button type="button" className="btn btn--outline" style={{ marginRight: '8px' }} onClick={() => setIsPatternSearchModalOpen(false)}>
+                  Fechar
+                </button>
+                <button type="submit" className="btn btn--primary" disabled={isSearchingPattern}>
+                  {isSearchingPattern ? 'Pesquisando...' : 'Buscar'}
+                </button>
+              </div>
+            </form>
+
+            <div className="pattern-results" style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--foreground)' }}>
+                Resultados Encontrados ({patternResults.length})
+              </h3>
+              
+              {patternSearchError && (
+                <div style={{ color: 'var(--destructive)', padding: '0.5rem 0', fontSize: '0.875rem' }}>
+                  {patternSearchError}
+                </div>
+              )}
+
+              {patternResults.map(t => {
+                const cat = categories.find(c => c.id === t.id_categoria);
+                return (
+                  <div key={t.id} style={{ 
+                    border: '1px solid var(--input-border)', 
+                    borderRadius: '8px', 
+                    padding: '0.75rem', 
+                    marginBottom: '0.5rem',
+                    background: 'var(--card)' 
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                        {highlightPattern(t.titulo, patternQuery)}
+                      </h4>
+                      <span className="task__id" style={{ fontSize: '0.8rem' }}>#{t.id}</span>
+                    </div>
+                    <p style={{ margin: '0.25rem 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--muted-foreground)', lineHeight: '1.4' }}>
+                      {t.descricao ? highlightPattern(t.descricao, patternQuery) : <em style={{ opacity: 0.6 }}>Sem descrição</em>}
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {cat && (
+                        <span className="meta-pill" style={{ fontSize: '0.7rem' }}>
+                          <span className="meta-pill__dot" style={{background: colorFromId(cat.id)}}></span>
+                          {cat.nome}
+                        </span>
+                      )}
+                      <span className="meta-pill meta-pill--muted" style={{ fontSize: '0.7rem' }}>
+                        Status: {t.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!isSearchingPattern && patternResults.length === 0 && patternQuery && (
+                <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
+                  Nenhum registro correspondente ao padrão "{patternQuery}" foi encontrado.
+                </div>
+              )}
+
+              {!patternQuery && (
+                <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
+                  Digite um padrão e clique em "Buscar" para pesquisar.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

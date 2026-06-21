@@ -4,11 +4,17 @@ import com.checklist.dao.*;
 import com.checklist.manager.*;
 import com.checklist.persistence.HashIndexTagTarefas;
 import com.checklist.persistence.HashIndexTarefaTags;
+import com.checklist.search.SearchManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class DaoConfig {
+
+    @Bean
+    public SearchManager searchManager(TarefaDAO tdao, UsuarioDAO udao) {
+        return new SearchManager(tdao, udao);
+    }
 
     @Bean
     public UsuarioTarefasManager usuarioTarefasManager() throws Exception {

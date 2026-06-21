@@ -56,13 +56,14 @@ public class BoyerMooreSearch {
                 
                 // Desloca para a próxima posição (usa good suffix se disponível)
                 if (shift + m < n) {
-                    shift += m - goodSuffixTable[0];
+                    int nextShift = m - goodSuffixTable[0];
+                    shift += Math.max(1, nextShift);
                 } else {
                     shift++;
                 }
             } else {
                 // Caractere não coincide
-                int badCharShift = j - getBadCharShift(badCharTable, text.charAt(shift + j), j);
+                int badCharShift = getBadCharShift(badCharTable, text.charAt(shift + j), j);
                 int goodSuffixShift = goodSuffixTable[j + 1];
                 
                 // Usa o maior deslocamento entre bad character e good suffix
