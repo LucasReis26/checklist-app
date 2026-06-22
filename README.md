@@ -32,6 +32,9 @@ A aplicação utiliza uma arquitetura cliente-servidor. O backend é desenvolvid
 - **Ciclo de Vida da Tarefa**: As tarefas podem ser criadas, associadas a categorias e tags, e finalmente concluídas, o que gera um registro histórico (log).
 
 ## Funcionalidades de Administrador
+
+**OBS:.** Ao utilizar o frontend web pela primeira vez, será necessário apagar a pasta dados para configurar a conta de admin.
+
 O sistema possui um controle de acesso baseado em papéis (Roles). Usuários com a role `ADMIN` possuem acesso a ferramentas de manutenção do sistema.
 
 ### Como Acessar o Perfil de Administrador

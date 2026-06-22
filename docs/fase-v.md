@@ -10,7 +10,7 @@
 
 **Link do Projeto:** [Checklist App](https://github.com/LucasReis26/checklist-app/tree/main)
 
-**Link do vídeo desta etapa:** []()
+**Link do vídeo desta etapa:** [Casamento de padrões e criptografia](https://www.youtube.com/watch?v=0CIZLyVC80s)
 
 ---
 
